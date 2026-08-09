@@ -72,7 +72,7 @@ fun LoginPage(){
 
         TextField(
             value = email,
-            onValueChange = { email = it},
+            onValueChange = { email = it },
             placeholder = { Text("example@example.com", color=Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
