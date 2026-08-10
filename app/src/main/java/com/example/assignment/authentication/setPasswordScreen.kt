@@ -1,78 +1,93 @@
 package com.example.assignment.authentication
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import androidx.compose.foundation.interaction.MutableInteractionSource
 @Composable
-fun LoginPage(onNavigateToSignUp: () -> Unit = {}){
-    var email by remember { mutableStateOf("")}
-    var password by remember { mutableStateOf("")}
-
-    // NEW: State to hold our error message
+fun SetPasswordScreen(
+    onBackClick: () -> Unit = {},
+    onPasswordCreated: () -> Unit = {}
+) {
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp)
-    ){
+    ) {
         Spacer(modifier = Modifier.height(60.dp))
 
-        Text(
-            text = "Log In",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E50FF),
+// THE HEADER (Back Arrow + Centered Title)
+        Box(
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
+            contentAlignment = Alignment.Center
+        ) {
+            // 1. Create a blank interaction source to swallow the ripple effect
+            val interactionSource = remember { MutableInteractionSource() }
+
+            Text(
+                text = "<",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF1E50FF),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    // 2. The magic fix: indication = null completely removes the grey box!
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onBackClick
+                    )
+                    .padding(8.dp)
+            )
+
+            Text(
+                text = "Set Password",
+                fontSize = 22.sp,
+                fontWeight = SemiBold,
+                color = Color(0xFF1E50FF)
+            )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Welcome",
-            fontSize = 25.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E50FF)
-        )
-
-        Text(
-            text = "Welcome to HealthCare",
+            text = "Create a secure new password for your HealthCare account.",
             fontSize = 14.sp,
-            color = Color.Gray
+            color = Color.Gray,
+            lineHeight = 20.sp
         )
 
         Spacer(modifier = Modifier.height(40.dp))
 
+        // MAIN PASSWORD FIELD
         Text(
-            text = "Email or Mobile Number",
+            text = "Password",
             fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = SemiBold,
             color = Color.DarkGray
         )
-
         Spacer(modifier = Modifier.height(8.dp))
-
         TextField(
-            value = email,
-            onValueChange = { email = it },
-            placeholder = { Text("example@example.com", color=Color(0xFF8DA6FF)) },
+            value = password,
+            onValueChange = { password = it },
+            visualTransformation = PasswordVisualTransformation(),
+            placeholder = { Text("********", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
@@ -85,19 +100,19 @@ fun LoginPage(onNavigateToSignUp: () -> Unit = {}){
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // CONFIRM PASSWORD FIELD
         Text(
-            text = "Password",
+            text = "Confirm Password",
             fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = SemiBold,
             color = Color.DarkGray
         )
-
         Spacer(modifier = Modifier.height(8.dp))
-
         TextField(
-            value = password,
-            onValueChange = { password=it },
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
             visualTransformation = PasswordVisualTransformation(),
+            placeholder = { Text("********", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
@@ -108,46 +123,33 @@ fun LoginPage(onNavigateToSignUp: () -> Unit = {}){
             )
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
-        TextButton(
-            onClick = { /* TODO */ },
-            modifier = Modifier.align(Alignment.End),
-            contentPadding = PaddingValues(0.dp)
-        ){
-            Text(
-                text = "Forgot Password?",
-                fontSize = 12.sp,
-                color = Color(0xFF1E50FF),
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // NEW: Show error message if it's not empty
+        // THE GHOST BOX (Error Message)
         if (errorMessage.isNotEmpty()) {
             Text(
                 text = errorMessage,
                 color = Color.Red,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = SemiBold,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // SUBMIT BUTTON & LOGIC
         Button(
-            // NEW: Validation Logic!
             onClick = {
-                if (email.isBlank() || password.isBlank()) {
+                if (password.isBlank() || confirmPassword.isBlank()) {
                     errorMessage = "Please fill in all fields"
-                } else if (!email.contains("@")) {
-                    errorMessage = "Please enter a valid email address"
+                } else if (password.length < 6) {
+                    errorMessage = "Password must be at least 6 characters"
+                } else if (password != confirmPassword) {
+                    errorMessage = "Passwords do not match"
                 } else {
                     errorMessage = ""
-                    // TODO: Authenticate user in database
+                    onPasswordCreated()
                 }
             },
             modifier = Modifier
@@ -155,47 +157,19 @@ fun LoginPage(onNavigateToSignUp: () -> Unit = {}){
                 .height(50.dp),
             shape = RoundedCornerShape(25.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E50FF))
-        ){
+        ) {
             Text(
-                text = "Log In",
+                text = "Create New Password",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-        }
-
-        Spacer(modifier = Modifier.height(160.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Text(
-                text = "Don't have an account? ",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-
-            TextButton(
-                onClick = onNavigateToSignUp,
-                contentPadding = PaddingValues(0.dp)
-            ){
-                Text(
-                    text = "Sign Up",
-                    fontSize = 12.sp,
-                    color = Color(0xFF1E50FF),
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun LoginPagePreview() {
-    LoginPage()
+fun SetPasswordScreenPreview() {
+    SetPasswordScreen()
 }

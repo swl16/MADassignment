@@ -1,47 +1,62 @@
-package com.example.assignment
+package com.example.assignment // Keep your actual package name here!
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.assignment.ui.theme.AssignmentTheme
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.assignment.authentication.LoginPage
+import com.example.assignment.authentication.SignUpScreen
+import com.example.assignment.authentication.StartingScreen // Added the import for your new screen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            AssignmentTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            // Launch the navigation map when the app starts
+            AppNavigation()
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+fun AppNavigation() {
+    val navController = rememberNavController()
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    AssignmentTheme {
-        Greeting("Android")
+    // 1. We change the startDestination to "starting"
+    NavHost(navController = navController, startDestination = "starting") {
+
+        // 2. THE STARTING SCREEN ROUTE
+        composable("starting") {
+            StartingScreen(
+                onTapToContinue = {
+                    // Navigate to 'login'
+                    navController.navigate("login") {
+                        // This removes 'starting' from the back history
+                        popUpTo("starting") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // 3. THE LOGIN ROUTE
+        composable("login") {
+            LoginPage(
+                onNavigateToSignUp = {
+                    navController.navigate("signup")
+                }
+            )
+        }
+
+        // 4. THE SIGN UP ROUTE
+        composable("signup") {
+            SignUpScreen(
+                onNavigateToLogin = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }

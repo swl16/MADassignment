@@ -8,32 +8,34 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SignUpScreen() {
-    // These will show as "unused" until we build the UI boxes below!
+fun SignUpScreen(onNavigateToLogin: () -> Unit = {}) {
     var fullName by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var mobileNumber by remember { mutableStateOf("") }
     var dateOfBirth by remember { mutableStateOf("") }
 
+    // NEW: Error message state
+    var errorMessage by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp)
             .verticalScroll(rememberScrollState()),
-        ) {
+    ) {
         Spacer(modifier = Modifier.height(60.dp))
-        // UI goes here
+
         Text(
             text = "New Account",
             fontSize = 22.sp,
@@ -80,6 +82,7 @@ fun SignUpScreen() {
         TextField(
             value = password,
             onValueChange = { password = it},
+            visualTransformation = PasswordVisualTransformation(), // Added this so it hides text!
             placeholder = { Text("********", color=Color(0xFF8DA6FF))},
             modifier= Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -108,7 +111,6 @@ fun SignUpScreen() {
             placeholder = { Text("eg. example123@example.com", color = Color(0xFF8DA6FF))},
             shape = RoundedCornerShape(12.dp),
             modifier= Modifier.fillMaxWidth(),
-
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color(0xFFE5EDFF),
                 unfocusedContainerColor = Color(0xFFE5EDFF),
@@ -131,7 +133,7 @@ fun SignUpScreen() {
         TextField(
             value = mobileNumber,
             onValueChange = { mobileNumber = it },
-            placeholder = { Text("012-3456789", color = Color(0xFF8DA6FF))},
+            placeholder = { Text("+60 12-3456789", color = Color(0xFF8DA6FF))},
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
@@ -153,8 +155,8 @@ fun SignUpScreen() {
         Spacer(modifier = Modifier.height(5.dp))
 
         TextField(
-            value = mobileNumber,
-            onValueChange = { mobileNumber = it},
+            value = dateOfBirth, // FIXED: Was 'mobileNumber' before!
+            onValueChange = { dateOfBirth = it},
             placeholder = { Text(" DD/MM/YY ",color = Color(0xFF8DA6FF))},
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -174,7 +176,6 @@ fun SignUpScreen() {
             color = Color.Gray,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
-
         )
         Spacer(modifier = Modifier.height(5.dp))
 
@@ -189,8 +190,33 @@ fun SignUpScreen() {
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // NEW: Display the error message right above the button
+        if (errorMessage.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                fontSize = 12.sp,
+                fontWeight = SemiBold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         Button(
-            onClick = { TODO()  },
+            // NEW: Validation Logic
+            onClick = {
+                if (fullName.isBlank() || password.isBlank() || email.isBlank() || mobileNumber.isBlank() || dateOfBirth.isBlank()) {
+                    errorMessage = "Please fill in all fields"
+                } else if (!email.contains("@")) {
+                    errorMessage = "Please enter a valid email address"
+                } else if (password.length < 6) {
+                    errorMessage = "Password must be at least 6 characters"
+                } else {
+                    errorMessage = ""
+                    // TODO: Navigate to Screen 00B Set Password / Save data
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .size(50.dp),
@@ -203,7 +229,6 @@ fun SignUpScreen() {
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-
         }
 
         Spacer(modifier=Modifier.height(40.dp))
@@ -211,28 +236,26 @@ fun SignUpScreen() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp), // Gives it a little breathing room at the bottom
-            horizontalArrangement = Arrangement.Center, // Centers the text and button together
+                .padding(bottom = 32.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Already have an account? ",
-                fontSize = 11.sp, // Bumped slightly so it's readable
+                fontSize = 11.sp,
                 fontWeight = SemiBold,
                 color = Color.Gray
-                // Notice I removed fillMaxWidth() and textAlign here!
-                // The Row handles the centering now.
             )
 
             TextButton(
-                onClick = { /* TODO: Navigate to Login */ },
-                contentPadding = PaddingValues(0.dp) // Removes the invisible boundary
+                onClick = onNavigateToLogin ,
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Text(
                     text = "Log In",
                     fontSize = 11.sp,
-                    fontWeight = SemiBold, // Fixed your 'fontWidth' typo here!
-                    color = Color(0xFF1E50FF) // Made it match your HealthCare blue
+                    fontWeight = SemiBold,
+                    color = Color(0xFF1E50FF)
                 )
             }
         }
