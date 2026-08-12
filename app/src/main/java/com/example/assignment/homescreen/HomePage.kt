@@ -2,6 +2,7 @@ package com.example.assignment.homescreen
 
 // 1. Clean, explicit imports so Android Studio doesn't get confused
 import android.R.attr.padding
+import android.R.attr.text
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -28,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -86,6 +90,8 @@ fun HomeScreen() {
         ) {
             TopHeader()
             GreetingLayer()
+            NextAppointmentCard()
+            QuickActions()
         }
     }
 }
@@ -151,17 +157,95 @@ fun GreetingLayer(){
     ){
         Text(
             text = "Hello, User",
-            fontSize = 27.sp,
+            fontSize = 24.sp,
             fontWeight = SemiBold,
         )
         Spacer(modifier = Modifier.height(1.dp))
 
         Text(
             text = "How can we help you today? ",
-            fontSize = 16.sp,
+            fontSize = 15.sp,
             color = Color.Gray
         )
+
+        Spacer(modifier = Modifier.height(18.dp))
     }
+}
+
+@Composable
+fun NextAppointmentCard(){
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E50FF)),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    ){
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ){
+            Text(
+                text = "NEXT APPOINTMENT", // Tweaked to all-caps like Figma
+                fontSize = 12.sp,
+                fontWeight = SemiBold,
+                color = Color.White.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Dr. Sarah Lim", // Updated to Figma name
+                fontSize = 24.sp,
+                fontWeight = Bold,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically // Centers everything nicely
+            ){
+                Text(
+                    text = "General Medicine",
+                    fontSize = 12.sp,
+                    fontWeight = SemiBold,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+
+                // THE FIX: The separator is now its own responsive element
+                Text(
+                    text = "•",
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+
+                Text(
+                    text = "Tomorrow, 10:30 AM",
+                    fontSize = 12.sp,
+                    fontWeight = SemiBold,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+
+            // THE FIX: Added a spacer here to push the "View details" box down!
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = "View details  →",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickActions(){
 }
 
 @Preview(showBackground = true, showSystemUi = true)
