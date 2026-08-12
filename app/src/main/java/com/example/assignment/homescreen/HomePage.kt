@@ -1,19 +1,18 @@
 package com.example.assignment.homescreen
-
-// 1. Clean, explicit imports so Android Studio doesn't get confused
-import android.R.attr.padding
-import android.R.attr.text
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.NavigationBar
@@ -91,7 +90,10 @@ fun HomeScreen() {
             TopHeader()
             GreetingLayer()
             NextAppointmentCard()
-            QuickActions()
+            Spacer(modifier= Modifier.height(10.dp))
+            QuickActionsGrid()
+            Spacer(modifier = Modifier.height(20.dp))
+            TodayMedicationCard(medicineName = null)
         }
     }
 }
@@ -245,7 +247,196 @@ fun NextAppointmentCard(){
 }
 
 @Composable
-fun QuickActions(){
+fun QuickActionCard(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        // THE FIX: Chain .height() to the modifier to force it to be taller!
+        modifier = modifier.height(90.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize() // THE FIX: Now it fills the entire 120.dp height
+                .padding(16.dp),
+        ) {
+            Text(
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1A1A1A)
+            )
+            Spacer(modifier = Modifier.height(15.dp))
+            Text(
+                text = subtitle,
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+@Composable
+fun QuickActionsGrid() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+    ) {
+        Text(
+            text = "Quick actions",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A)
+        )
+
+        // Pushes the grid of cards away from the "Quick actions" title
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- ROW 1 ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            QuickActionCard(
+                title = "Book appointment",
+                subtitle = "Find a doctor",
+                modifier = Modifier.weight(1f), // Takes 50% of the screen
+            )
+
+            QuickActionCard(
+                title = "Medication",
+                subtitle = "Set reminder",
+                modifier = Modifier.weight(1f) // Takes 50% of the screen
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- ROW 2 ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            QuickActionCard(
+                title = "Find nearby",
+                subtitle = "Clinic or hospital",
+                modifier = Modifier.weight(1f)
+            )
+
+            QuickActionCard(
+                title = "Medical records",
+                subtitle = "View your files",
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun TodayMedicationCard(
+    medicineName: String?, // The "?" means this can be null!
+    timeText: String = "",
+    contextText: String = ""
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .padding(bottom = 30.dp) // Gives space before the bottom navigation bar
+    ) {
+        // Section Title
+        Text(
+            text = "Today",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // THE LOGIC: If there is a medicine, show the green card.
+        if (medicineName != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                // THE FIX: IntrinsicSize.Min lets the green line match the exact text height
+                Row(modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+
+                    // 1. The Green Line
+                    Box(
+                        modifier = Modifier
+                            .width(6.dp)
+                            .fillMaxHeight()
+                            .background(Color(0xFF00BFA5)) // HealthCare Green
+                    )
+
+                    // 2. The Text Content
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "$timeText  •  $contextText",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = medicineName,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1A1A1A)
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 3. Mark as taken button aligned to the right
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Text(
+                                text = "Mark as taken",
+                                color = Color(0xFF1E50FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            // THE LOGIC: If medicineName is null, show the "Empty State" card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F5FF)), // Very light blue
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No more medications for today! 🎉",
+                        color = Color.Gray,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
