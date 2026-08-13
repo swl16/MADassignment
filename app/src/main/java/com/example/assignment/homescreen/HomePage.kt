@@ -36,6 +36,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import com.example.assignment.reminder.ReminderScreen
+
 @Composable
 fun HomeScreen() {
     var selectedTab by remember { mutableStateOf(0) }
@@ -82,19 +84,33 @@ fun HomeScreen() {
         }
     ) { innerPadding: PaddingValues ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            TopHeader()
-            GreetingLayer()
-            NextAppointmentCard()
-            Spacer(modifier= Modifier.height(10.dp))
-            QuickActionsGrid()
-            Spacer(modifier = Modifier.height(20.dp))
-            TodayMedicationCard(medicineName = null)
+        Box(modifier = Modifier.padding(innerPadding)) {
+            when (selectedTab) {
+                0 -> HomeContent()
+                2 -> ReminderScreen()
+                else -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = "Coming Soon", color = Color.Gray)
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun HomeContent() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        TopHeader()
+        GreetingLayer()
+        NextAppointmentCard()
+        Spacer(modifier= Modifier.height(10.dp))
+        QuickActionsGrid()
+        Spacer(modifier = Modifier.height(20.dp))
+        TodayMedicationCard(medicineName = null)
     }
 }
 

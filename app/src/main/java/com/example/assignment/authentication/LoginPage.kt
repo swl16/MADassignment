@@ -18,12 +18,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginPage(
+    userDao: com.example.assignment.database.UserDao,
     onNavigateToSignUp: () -> Unit = {},
     onNavigateToHome: () -> Unit = {} // <-- NEW!
 ){
+    val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("")}
     var password by remember { mutableStateOf("")}
 
@@ -149,8 +152,19 @@ fun LoginPage(
                 } else if (!email.contains("@")) {
                     errorMessage = "Please enter a valid email address"
                 } else {
-                    errorMessage = ""
-                    onNavigateToHome() // <-- Triggers the route to the Home Screen!
+                    scope.launch {
+                        // 1. Ask the database if this email and password match
+                        val user = userDao.login(email, password)
+
+                        if (user != null) {
+                            // 2. Success! Go to home screen
+                            errorMessage = ""
+                            onNavigateToHome()
+                        } else {
+                            // 3. Failed! Wrong credentials
+                            errorMessage = "Invalid email or password"
+                        }
+                    }
                 }
             },
             modifier = Modifier
@@ -195,10 +209,4 @@ fun LoginPage(
             }
         }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun LoginPagePreview() {
-    LoginPage()
 }
