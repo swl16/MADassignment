@@ -18,7 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun SignUpScreen(onNavigateToLogin: () -> Unit = {}) {
+fun SignUpScreen(
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {} // <-- NEW!
+) {
     var fullName by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -214,7 +217,7 @@ fun SignUpScreen(onNavigateToLogin: () -> Unit = {}) {
                     errorMessage = "Password must be at least 6 characters"
                 } else {
                     errorMessage = ""
-                    // TODO: Navigate to Screen 00B Set Password / Save data
+                    onNavigateToHome() // <-- Triggers the route to the Home Screen!
                 }
             },
             modifier = Modifier

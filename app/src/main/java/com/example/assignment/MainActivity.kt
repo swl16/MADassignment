@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Launch the navigation map when the app starts
+            // Your app theme wrapper might be here, keep it if it is!
             AppNavigation()
         }
     }

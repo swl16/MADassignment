@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun LoginPage(onNavigateToSignUp: () -> Unit = {}){
+fun LoginPage(
+    onNavigateToSignUp: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {} // <-- NEW!
+){
     var email by remember { mutableStateOf("")}
     var password by remember { mutableStateOf("")}
 
@@ -147,7 +150,7 @@ fun LoginPage(onNavigateToSignUp: () -> Unit = {}){
                     errorMessage = "Please enter a valid email address"
                 } else {
                     errorMessage = ""
-                    // TODO: Authenticate user in database
+                    onNavigateToHome() // <-- Triggers the route to the Home Screen!
                 }
             },
             modifier = Modifier

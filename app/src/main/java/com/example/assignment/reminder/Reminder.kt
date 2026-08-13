@@ -50,7 +50,9 @@ fun Reminder() {
                 )
 
                 IconButton(
-                    onClick = {/* handle add reminder navigation*/},
+                    onClick = {
+ handle add reminder navigation
+},
                     modifier = Modifier.background(Color(0xFF2563EB), CircleShape).size(40.dp)
                 ){
                     Icon(
