@@ -231,14 +231,14 @@ fun QuickActionCard(
         ) {
             Text(
                 text = title,
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1A1A1A)
             )
             Spacer(modifier = Modifier.height(15.dp))
             Text(
                 text = subtitle,
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 color = Color.Gray
             )
         }
