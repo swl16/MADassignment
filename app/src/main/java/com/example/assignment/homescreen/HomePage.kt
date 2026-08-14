@@ -1,5 +1,6 @@
 package com.example.assignment.homescreen
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,9 +32,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.assignment.navigation.BottomNavBar
-
+import androidx.compose.runtime.*
+import com.example.assignment.database.UserDao
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    userDao: UserDao, // <-- 1. Accept the database
+    onNavigateToProfile: () -> Unit = {}
+) {
+    // 2. Create state variables to hold the dynamic data
+    var initials by remember { mutableStateOf("--") }
+    var firstName by remember { mutableStateOf("User") }
+
+    // 3. Fetch the data right when the screen opens
+    LaunchedEffect(Unit) {
+        val user = userDao.getLatestUser()
+        if (user != null) {
+            initials = user.fullName.take(2).uppercase()
+            // Split the full name by spaces and just take their first name for a friendly greeting
+            firstName = user.fullName.split(" ").firstOrNull() ?: "User"
+        }
+    }
+
     Scaffold(
         containerColor = Color(0xFFF8FAFF),
         bottomBar = {
@@ -42,19 +62,31 @@ fun HomeScreen(navController: NavController) {
     ) { innerPadding: PaddingValues ->
 
         Box(modifier = Modifier.padding(innerPadding)) {
-            HomeContent()
+            // 4. Pass the dynamic text down to the content!
+            HomeContent(
+                initials = initials,
+                firstName = firstName,
+                onNavigateToProfile = onNavigateToProfile
+            )
         }
     }
 }
 
 @Composable
-fun HomeContent() {
+fun HomeContent(
+    initials: String, // <-- Accept initials
+    firstName: String, // <-- Accept first name
+    onNavigateToProfile: () -> Unit = {}
+) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
-        TopHeader()
-        GreetingLayer()
+        // Pass initials to the header
+        TopHeader(initials = initials, onAvatarClick = onNavigateToProfile)
+
+        // Pass first name to the greeting
+        GreetingLayer(firstName = firstName)
+
         NextAppointmentCard()
         Spacer(modifier= Modifier.height(10.dp))
         QuickActionsGrid()
@@ -64,7 +96,10 @@ fun HomeContent() {
 }
 
 @Composable
-fun TopHeader() {
+fun TopHeader(
+    initials: String, // <-- Accept initials
+    onAvatarClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -72,7 +107,6 @@ fun TopHeader() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. The Brand Name
         Text(
             text = "HealthCare",
             fontSize = 27.sp,
@@ -80,34 +114,31 @@ fun TopHeader() {
             color = Color(0xFF1E50FF)
         )
 
-        // 2. The Icons Group
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp) // Puts a gap between the two circles
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Notification Bell Background
             Surface(
                 shape = androidx.compose.foundation.shape.CircleShape,
                 color = Color(0xFFF0F5FF),
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    // Using a unicode bell so we don't need the icon library!
                     Text("🔔", fontSize = 16.sp)
                 }
             }
 
-            // Profile Badge Background
             Surface(
                 shape = androidx.compose.foundation.shape.CircleShape,
                 color = Color(0xFFE5EDFF),
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable { onAvatarClick() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = "WL",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E50FF)
+                        text = initials, // <-- DYNAMIC INITIALS HERE!
+                        color = Color(0xFF1E50FF),
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -116,21 +147,23 @@ fun TopHeader() {
 }
 
 @Composable
-fun GreetingLayer(){
+fun GreetingLayer(
+    firstName: String // <-- Accept first name
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
     ){
         Text(
-            text = "Hello, User",
+            text = "Hello, $firstName", // <-- DYNAMIC GREETING HERE!
             fontSize = 24.sp,
             fontWeight = SemiBold,
         )
         Spacer(modifier = Modifier.height(1.dp))
 
         Text(
-            text = "How can we help you today? ",
+            text = "How can we help you today?",
             fontSize = 15.sp,
             color = Color.Gray
         )
@@ -402,10 +435,4 @@ fun TodayMedicationCard(
             }
         }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun HomeScreenPreview(){
-    HomeScreen(navController = androidx.navigation.compose.rememberNavController())
 }

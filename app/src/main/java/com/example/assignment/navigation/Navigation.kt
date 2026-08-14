@@ -19,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.assignment.profile.EditProfileScreen
+import com.example.assignment.profile.ProfileScreen
 
 @Composable
 fun AppNavigation() {
@@ -66,7 +68,11 @@ fun AppNavigation() {
         }
 
         composable("home") {
-            HomeScreen(navController)
+            HomeScreen(
+                navController = navController,
+                userDao = userDao,
+                onNavigateToProfile = { navController.navigate("profile") } // <-- ADD THIS LINE
+            )
         }
 
         composable("reminders") {
@@ -81,6 +87,21 @@ fun AppNavigation() {
         composable("records") {
             // Placeholder
             Text("Records Screen")
+        }
+
+        composable("profile") {
+            ProfileScreen(
+                userDao = userDao,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEdit = { navController.navigate("edit_profile") } // <-- ADD THIS!
+            )
+        }
+
+        composable("edit_profile") {
+            EditProfileScreen(
+                userDao = userDao,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }
