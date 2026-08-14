@@ -17,7 +17,8 @@ import com.example.assignment.database.UserDao
 fun ProfileScreen(
     userDao: UserDao, // <-- Now it requires the database
     onNavigateBack: () -> Unit = {},
-    onNavigateToEdit: () -> Unit = {}
+    onNavigateToEdit: () -> Unit = {},
+    onLogOut: () -> Unit = {}
 ) {
     // 1. Create a blank state variable to hold the user data
     var currentUser by remember { mutableStateOf<User?>(null) }
@@ -36,6 +37,8 @@ fun ProfileScreen(
 
     // Dynamically format the Room ID into a Healthcare ID (1 -> HC-2026-0001)
     val healthcareId = "HC-2026-${String.format("%04d", currentUser?.id ?: 0)}"
+    // Add this to remember if the pop-up should be visible!
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -132,7 +135,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = { /* TODO: Log out logic */ },
+                onClick = { showLogoutDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 32.dp)
@@ -142,6 +145,37 @@ fun ProfileScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
                 Text(text = "Log out", color = Color.Red, fontWeight = FontWeight.Bold)
+            }
+
+            // 7. The Confirmation Pop-Up
+            if (showLogoutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showLogoutDialog = false }, // Closes if they tap outside the box
+                    title = {
+                        Text("Log out", fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
+                    },
+                    text = {
+                        Text("Are you sure you want to log out of your account?", color = Color.Gray)
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showLogoutDialog = false // Hide the dialog
+                                onLogOut()               // ACTUALLY log them out!
+                            }
+                        ) {
+                            Text("Yes, log out", color = Color.Red, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showLogoutDialog = false } // Just hide the dialog
+                        ) {
+                            Text("Cancel", color = Color(0xFF1E50FF), fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    containerColor = Color.White
+                )
             }
         }
     }

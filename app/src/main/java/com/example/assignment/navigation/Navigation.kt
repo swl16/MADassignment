@@ -93,7 +93,15 @@ fun AppNavigation() {
             ProfileScreen(
                 userDao = userDao,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToEdit = { navController.navigate("edit_profile") } // <-- ADD THIS!
+                onNavigateToEdit = { navController.navigate("edit_profile") },
+                onLogOut = {
+                    // Navigate to log in AND wipe the entire back stack memory!
+                    navController.navigate("login") {
+                        popUpTo(navController.graph.id) {
+                            inclusive = true
+                        }
+                    }
+                }
             )
         }
 
