@@ -38,7 +38,8 @@ import com.example.assignment.database.UserDao
 fun HomeScreen(
     navController: NavController,
     userDao: UserDao, // <-- 1. Accept the database
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {}
 ) {
     // 2. Create state variables to hold the dynamic data
     var initials by remember { mutableStateOf("--") }
@@ -66,7 +67,8 @@ fun HomeScreen(
             HomeContent(
                 initials = initials,
                 firstName = firstName,
-                onNavigateToProfile = onNavigateToProfile
+                onNavigateToProfile = onNavigateToProfile,
+                onNavigateToNotifications = onNavigateToNotifications
             )
         }
     }
@@ -76,13 +78,17 @@ fun HomeScreen(
 fun HomeContent(
     initials: String, // <-- Accept initials
     firstName: String, // <-- Accept first name
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
         // Pass initials to the header
-        TopHeader(initials = initials, onAvatarClick = onNavigateToProfile)
+        TopHeader(
+            initials = initials,
+            onAvatarClick = onNavigateToProfile,
+            onBellClick = onNavigateToNotifications)
 
         // Pass first name to the greeting
         GreetingLayer(firstName = firstName)
@@ -98,7 +104,8 @@ fun HomeContent(
 @Composable
 fun TopHeader(
     initials: String, // <-- Accept initials
-    onAvatarClick: () -> Unit = {}
+    onAvatarClick: () -> Unit = {},
+    onBellClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -120,7 +127,9 @@ fun TopHeader(
             Surface(
                 shape = androidx.compose.foundation.shape.CircleShape,
                 color = Color(0xFFF0F5FF),
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable { onBellClick() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text("🔔", fontSize = 16.sp)

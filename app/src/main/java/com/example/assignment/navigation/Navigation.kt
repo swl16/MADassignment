@@ -71,7 +71,8 @@ fun AppNavigation() {
             HomeScreen(
                 navController = navController,
                 userDao = userDao,
-                onNavigateToProfile = { navController.navigate("profile") } // <-- ADD THIS LINE
+                onNavigateToProfile = { navController.navigate("profile")},
+                onNavigateToNotifications = { navController.navigate("notifications") } // <-- ADD THIS LINE
             )
         }
 
@@ -108,6 +109,12 @@ fun AppNavigation() {
         composable("edit_profile") {
             EditProfileScreen(
                 userDao = userDao,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("notifications") {
+            com.example.assignment.notifications.NotificationsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
