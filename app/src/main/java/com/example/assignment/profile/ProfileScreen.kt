@@ -10,15 +10,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.assignment.database.User // Make sure to import your User!
+import com.example.assignment.database.User
 import com.example.assignment.database.UserDao
 
 @Composable
 fun ProfileScreen(
-    userDao: UserDao, // <-- Now it requires the database
+    userDao: UserDao,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: () -> Unit = {},
-    onLogOut: () -> Unit = {}
+    onLogOut: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToEmergency: () -> Unit = {},
 ) {
     // 1. Create a blank state variable to hold the user data
     var currentUser by remember { mutableStateOf<User?>(null) }
@@ -128,9 +130,15 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            SettingsRowItem(icon = "🕒", title = "Appointment history", subtitle = "Past and upcoming appointments", iconColor = Color.Gray)
-            SettingsRowItem(icon = "🔵", title = "Notification settings", subtitle = "Control alerts and reminders", iconColor = Color(0xFF1E50FF))
-            SettingsRowItem(icon = "➕", title = "Emergency contact", subtitle = "Manage your trusted contact", iconColor = Color(0xFF1E50FF))
+            SettingsRowItem(
+                icon = "🕒", title = "Appointment history", subtitle = "Past and upcoming appointments", iconColor = Color.Gray,
+                onClick = { /* TODO later */ } )
+            SettingsRowItem(
+                icon = "🔵", title = "Notification settings", subtitle = "Control alerts and reminders", iconColor = Color(0xFF1E50FF),
+                onClick = { onNavigateToSettings() })
+            SettingsRowItem(
+                icon = "➕", title = "Emergency contact", subtitle = "Manage your trusted contact", iconColor = Color(0xFF1E50FF),
+                onClick = { onNavigateToEmergency() })
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -235,15 +243,17 @@ fun SettingsRowItem(
     icon: String,
     title: String,
     subtitle: String,
-    iconColor: Color
+    iconColor: Color,
+    onClick: () -> Unit = {}
 ) {
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp), // Creates the space between the cards
+            .padding(vertical = 6.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Keeps it flat but separate
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier

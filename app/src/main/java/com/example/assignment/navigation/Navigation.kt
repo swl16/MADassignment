@@ -95,12 +95,11 @@ fun AppNavigation() {
                 userDao = userDao,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { navController.navigate("edit_profile") },
+                onNavigateToSettings = { navController.navigate("notification_settings") },
+                onNavigateToEmergency = { navController.navigate("emergency_contact") },
                 onLogOut = {
-                    // Navigate to log in AND wipe the entire back stack memory!
                     navController.navigate("login") {
-                        popUpTo(navController.graph.id) {
-                            inclusive = true
-                        }
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 }
             )
@@ -115,6 +114,18 @@ fun AppNavigation() {
 
         composable("notifications") {
             com.example.assignment.notifications.NotificationsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("notification_settings") {
+            com.example.assignment.profile.NotificationSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("emergency_contact") {
+            com.example.assignment.profile.EmergencyContactScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
