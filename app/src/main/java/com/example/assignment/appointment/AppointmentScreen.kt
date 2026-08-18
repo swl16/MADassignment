@@ -42,6 +42,6 @@ fun  AppointmentMain(navController: NavController){
 
 @Preview(showBackground = true)
 @Composable
-fun appointmentPreview(){
+fun AppointmentPreview(){
     AppointmentMain(navController = rememberNavController() )
 }

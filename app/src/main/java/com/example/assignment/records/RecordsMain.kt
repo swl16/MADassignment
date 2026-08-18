@@ -41,7 +41,7 @@ fun RecordsMain(navController: NavController){
 }
 
 @Preview(showBackground = true)
-@Composable()
-fun recordsPreview(){
+@Composable
+fun RecordsPreview(){
     RecordsMain(navController = rememberNavController())
 }

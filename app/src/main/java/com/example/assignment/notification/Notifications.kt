@@ -1,4 +1,4 @@
-package com.example.assignment.notifications
+package com.example.assignment.notification
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

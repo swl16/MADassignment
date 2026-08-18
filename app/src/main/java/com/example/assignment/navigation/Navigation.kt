@@ -33,13 +33,11 @@ fun AppNavigation() {
     NavHost(navController = navController, startDestination = "starting") {
 
         composable("starting") {
-            StartingScreen(
-                onTapToContinue = {
-                    navController.navigate("login") {
-                        popUpTo("starting") { inclusive = true }
-                    }
+            StartingScreen {
+                navController.navigate("login") {
+                    popUpTo("starting") { inclusive = true }
                 }
-            )
+            }
         }
 
         composable("login") {
@@ -85,8 +83,7 @@ fun AppNavigation() {
         }
 
         composable("records") {
-            // Placeholder
-            Text("Records Screen")
+            com.example.assignment.records.RecordsMain(navController)
         }
 
         composable("profile") {
@@ -112,7 +109,7 @@ fun AppNavigation() {
         }
 
         composable("notifications") {
-            com.example.assignment.notifications.NotificationsScreen(
+            com.example.assignment.notification.NotificationsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
