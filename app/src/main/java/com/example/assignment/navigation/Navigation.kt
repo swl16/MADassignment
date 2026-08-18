@@ -1,8 +1,15 @@
 package com.example.assignment.navigation
 
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -11,14 +18,6 @@ import com.example.assignment.authentication.SignUpScreen
 import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
 import com.example.assignment.homescreen.HomeScreen
-
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.assignment.profile.EditProfileScreen
 import com.example.assignment.profile.ProfileScreen
 
@@ -82,7 +81,7 @@ fun AppNavigation() {
 
         composable("appointments") {
             // Placeholder
-            Text("Appointments Screen")
+            com.example.assignment.appointment.AppointmentMain(navController)
         }
 
         composable("records") {
