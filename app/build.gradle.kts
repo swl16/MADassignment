@@ -34,8 +34,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    compileOptions { isCoreLibraryDesugaringEnabled = true }
 }
 
 dependencies {
@@ -60,6 +58,5 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
 }
