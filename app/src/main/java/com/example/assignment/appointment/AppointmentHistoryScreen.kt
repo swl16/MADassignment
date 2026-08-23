@@ -28,6 +28,7 @@ import com.example.assignment.database.UserDao
 fun AppointmentHistoryScreen(
     onBack: () -> Unit,
     onAppointmentClick: (Appointment) -> Unit = {},
+    onBookAppointment: () -> Unit = {},
     userDao: UserDao? = null,
     appointmentDao: AppointmentDao? = null
 ) {
@@ -53,7 +54,7 @@ fun AppointmentHistoryScreen(
                 title = { 
                     Text(
                         "Appointment History", 
-                        fontSize = 20.sp, 
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F1F38)
                     ) 
@@ -61,10 +62,18 @@ fun AppointmentHistoryScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color(0xFF0F1F38)
                         )
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = onBookAppointment,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF1F6BE8))
+                    ) {
+                        Text("+ Book")
                     }
                 }
             )
@@ -165,6 +174,7 @@ fun AppointmentHistoryCard(
         color = Color.White,
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
         shadowElevation = 0.dp // Usually cards in this design have minimal shadow or just white bg on off-white
     ) {
         Row(

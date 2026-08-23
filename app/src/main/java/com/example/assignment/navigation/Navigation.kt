@@ -163,6 +163,7 @@ fun AppNavigation() {
         composable("appointmentHistory"){
             com.example.assignment.appointment.AppointmentHistoryScreen(
                 onBack = { navController.popBackStack() },
+                onBookAppointment = { navController.navigate("appointments") },
                 userDao = userDao,
                 appointmentDao = appointmentDao
             )
