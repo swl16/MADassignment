@@ -50,7 +50,7 @@ fun AppointmentHistoryScreen(
         containerColor = Color(0xFFF5FAFF),
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8FAFF)),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF5FAFF)),
                 title = { 
                     Text(
                         "Appointment History", 

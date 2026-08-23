@@ -1,12 +1,18 @@
 package com.example.assignment.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -16,7 +22,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.assignment.appointment.AppointmentDetailScreen
+import com.example.assignment.appointment.AppointmentHistoryScreen
 import com.example.assignment.appointment.BookingConfirmedScreen
+import com.example.assignment.appointment.Doctor
 import com.example.assignment.appointment.DoctorProfileScreen
 import com.example.assignment.appointment.SelectDateTimeScreen
 import com.example.assignment.appointment.sampleDoctors
@@ -24,12 +33,14 @@ import com.example.assignment.authentication.LoginPage
 import com.example.assignment.authentication.SignUpScreen
 import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
+import com.example.assignment.database.Appointment
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.profile.EditProfileScreen
 import com.example.assignment.profile.ProfileScreen
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -39,6 +50,9 @@ fun AppNavigation() {
     val db = remember { AppDatabase.getDatabase(context) }
     val userDao = db.userDao()
     val appointmentDao = db.appointmentDao()
+
+    val appointments = remember { mutableStateListOf<Appointment>() }
+    var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
 
 
     NavHost(navController = navController, startDestination = "starting") {
@@ -161,12 +175,64 @@ fun AppNavigation() {
         }
 
         composable("appointmentHistory"){
-            com.example.assignment.appointment.AppointmentHistoryScreen(
+            AppointmentHistoryScreen(
                 onBack = { navController.popBackStack() },
                 onBookAppointment = { navController.navigate("appointments") },
+                onAppointmentClick = { appointment ->
+                    selectedAppointment = appointment
+                    navController.navigate("appointment_detail")
+                },
                 userDao = userDao,
                 appointmentDao = appointmentDao
             )
+        }
+
+        composable("appointment_detail") {
+            AppointmentDetailScreen(
+                navController = navController,
+                appointment = selectedAppointment,
+                onCancelAppointment = { toCancel ->
+                    appointments.remove(toCancel)
+                }
+            )
+        }
+
+        composable("reschedule_appointment/{appointmentId}",
+            arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
+            ) { backStackEntry ->
+            val appointmentId = backStackEntry.arguments?.getInt("appointmentId")
+            val appointment = appointments.find { it.id == appointmentId }
+
+            if (appointment != null) {
+                val matchingDoctor = sampleDoctors.find { it.name.equals(appointment.doctorName, ignoreCase = true) }
+                    ?: Doctor(
+                        name = appointment.doctorName,
+                        specialty = appointment.specialty,
+                        rating = 4.9,
+                        availability = "Mon - Fri",
+                        experienceYears = 5,
+                        patientsCount = "1.0k",
+                        about = "Medical Practitioner",
+                        availableTimes = listOf("9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM"),
+                        location = appointment.location
+                    )
+
+                SelectDateTimeScreen(
+                    doctor = matchingDoctor,
+                    isRescheduling = true,
+                    onNavigateBack = { navController.popBackStack() },
+                    onConfirm = { newDate, newTime ->
+                        val index = appointments.indexOfFirst { it.id == appointment.id }
+                        if (index != -1) {
+                            appointments[index] = appointment.copy(
+                                date = newDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                time = newTime
+                            )
+                        }
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
 
         composable(
@@ -183,7 +249,7 @@ fun AppNavigation() {
                 onConfirm = { date, time ->
                     scope.launch {
                         val currentUser = userDao.getLatestUser()
-                        val newAppointment = com.example.assignment.database.Appointment(
+                        val newAppointment = Appointment(
                             userId = currentUser?.id ?: 0,
                             doctorName = doctor.name,
                             specialty = doctor.specialty,

@@ -13,5 +13,6 @@ data class Appointment(
     val date: String,         // stored as "Thursday, 16 July 2026" (display-ready)
     val time: String,         // "10:30 AM"
     val location: String = "HealthCare Clinic",
-    val status: String = "Upcoming" // Upcoming / Completed / Cancelled
+    val status: String = "Upcoming", // Upcoming / Completed / Canceled
+    val reason: String = "General health consultation"
 )

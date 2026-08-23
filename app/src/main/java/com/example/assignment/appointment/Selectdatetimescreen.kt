@@ -1,5 +1,7 @@
 package com.example.assignment.appointment
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -50,17 +53,21 @@ import java.util.Locale
 
 private val timeSlots = listOf("9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM")
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SelectDateTimeScreen(
     doctor: Doctor,
+    initialDate: LocalDate = LocalDate.now(),
+    initialTime: String? = null,
+    isRescheduling: Boolean = false,
     onNavigateBack: () -> Unit = {},
     onConfirm: (date: LocalDate, time: String) -> Unit = { _, _ -> }
 ) {
     var weekStart by remember {
-        mutableStateOf(LocalDate.now().with(DayOfWeek.MONDAY))
+        mutableStateOf(initialDate.with(DayOfWeek.MONDAY))
     }
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var selectedTime by remember { mutableStateOf<String?>(null) }
+    var selectedDate by remember { mutableStateOf(initialDate) }
+    var selectedTime by remember { mutableStateOf<String?>(initialTime) }
 
     val weekDays = remember(weekStart) { (0..6).map { weekStart.plusDays(it.toLong()) } }
 
@@ -75,14 +82,14 @@ fun SelectDateTimeScreen(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = Color(0xFF14213D),
                     modifier = Modifier.clickable { onNavigateBack() }
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Select Date & Time",
+                    text = if (isRescheduling) "Reschedule Appointment" else "Select Date & Time",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF14213D)
@@ -230,7 +237,10 @@ fun SelectDateTimeScreen(
                 shape = RoundedCornerShape(25.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E50FF))
             ) {
-                Text("Confirm appointment", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(text = if (isRescheduling) "Confirm Reschedule" else "Confirm appointment",
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -238,6 +248,7 @@ fun SelectDateTimeScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DayChip(day: LocalDate, selected: Boolean, onClick: () -> Unit) {
     Column(
@@ -286,8 +297,11 @@ private fun TimeSlotButton(label: String, selected: Boolean, modifier: Modifier 
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun SelectDateTimePreview() {
-    SelectDateTimeScreen(doctor = sampleDoctors[0])
+    SelectDateTimeScreen(doctor = sampleDoctors[0],isRescheduling = true,
+        onNavigateBack = {},
+        onConfirm = { _, _ -> })
 }
