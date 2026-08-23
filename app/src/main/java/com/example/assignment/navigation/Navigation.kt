@@ -10,9 +10,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.assignment.appointment.DoctorProfileScreen
+import com.example.assignment.appointment.sampleDoctors
 import com.example.assignment.authentication.LoginPage
 import com.example.assignment.authentication.SignUpScreen
 import com.example.assignment.authentication.StartingScreen
@@ -68,7 +72,7 @@ fun AppNavigation() {
             HomeScreen(
                 navController = navController,
                 userDao = userDao,
-                onNavigateToProfile = { navController.navigate("profile")},
+                onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToNotifications = { navController.navigate("notifications") } // <-- ADD THIS LINE
             )
         }
@@ -78,8 +82,35 @@ fun AppNavigation() {
         }
 
         composable("appointments") {
-            // Placeholder
-            com.example.assignment.appointment.AppointmentMain(navController)
+            com.example.assignment.appointment.AppointmentMain(
+                navController = navController,
+                onViewProfile = { doctorIndex ->
+                    navController.navigate("doctor_profile/$doctorIndex")
+                },
+                onBookNow = { doctor ->
+                    // TODO: once Appointment entity/DAO exists, insert a row here instead
+                    // For now this can just navigate straight to the profile screen too:
+                    val index = sampleDoctors.indexOf(doctor)
+                    navController.navigate("doctor_profile/$index")
+                }
+            )
+        }
+
+        composable(
+            route = "doctor_profile/{doctorIndex}",
+            arguments = listOf(navArgument("doctorIndex") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val index = backStackEntry.arguments?.getInt("doctorIndex") ?: 0
+            DoctorProfileScreen(
+                doctor = sampleDoctors[index],
+                onNavigateBack = { navController.popBackStack() },
+                onBookAppointment = {
+                    // TODO: insert into Appointment table via appointmentDao, then navigate back or to a confirmation screen
+                },
+                onMessageClinic = {
+                    // TODO: wire to a messaging/contact screen if your assignment scope includes it
+                }
+            )
         }
 
         composable("records") {
