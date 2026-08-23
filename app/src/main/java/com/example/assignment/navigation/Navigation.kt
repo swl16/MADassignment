@@ -160,6 +160,14 @@ fun AppNavigation() {
             )
         }
 
+        composable("appointmentHistory"){
+            com.example.assignment.appointment.AppointmentHistoryScreen(
+                onBack = { navController.popBackStack() },
+                userDao = userDao,
+                appointmentDao = appointmentDao
+            )
+        }
+
         composable(
             route = "select_date_time/{doctorIndex}",
             arguments = listOf(navArgument("doctorIndex") { type = NavType.IntType })
