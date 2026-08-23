@@ -6,6 +6,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -15,7 +16,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.assignment.appointment.BookingConfirmedScreen
 import com.example.assignment.appointment.DoctorProfileScreen
+import com.example.assignment.appointment.SelectDateTimeScreen
 import com.example.assignment.appointment.sampleDoctors
 import com.example.assignment.authentication.LoginPage
 import com.example.assignment.authentication.SignUpScreen
@@ -24,6 +27,8 @@ import com.example.assignment.database.AppDatabase
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.profile.EditProfileScreen
 import com.example.assignment.profile.ProfileScreen
+import kotlinx.coroutines.launch
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun AppNavigation() {
@@ -33,6 +38,8 @@ fun AppNavigation() {
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
     val userDao = db.userDao()
+    val appointmentDao = db.appointmentDao()
+
 
     NavHost(navController = navController, startDestination = "starting") {
 
@@ -104,12 +111,8 @@ fun AppNavigation() {
             DoctorProfileScreen(
                 doctor = sampleDoctors[index],
                 onNavigateBack = { navController.popBackStack() },
-                onBookAppointment = {
-                    // TODO: insert into Appointment table via appointmentDao, then navigate back or to a confirmation screen
-                },
-                onMessageClinic = {
-                    // TODO: wire to a messaging/contact screen if your assignment scope includes it
-                }
+                onBookAppointment = { navController.navigate("select_date_time/$index") },
+                onMessageClinic = { /* TODO if in scope */ }
             )
         }
 
@@ -154,6 +157,53 @@ fun AppNavigation() {
         composable("emergency_contact") {
             com.example.assignment.profile.EmergencyContactScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "select_date_time/{doctorIndex}",
+            arguments = listOf(navArgument("doctorIndex") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val index = backStackEntry.arguments?.getInt("doctorIndex") ?: 0
+            val doctor = sampleDoctors[index]
+            val scope = rememberCoroutineScope()
+
+            SelectDateTimeScreen(
+                doctor = doctor,
+                onNavigateBack = { navController.popBackStack() },
+                onConfirm = { date, time ->
+                    scope.launch {
+                        val currentUser = userDao.getLatestUser()
+                        val newAppointment = com.example.assignment.database.Appointment(
+                            userId = currentUser?.id ?: 0,
+                            doctorName = doctor.name,
+                            specialty = doctor.specialty,
+                            date = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
+                            time = time
+                        )
+                        val newId = appointmentDao.insert(newAppointment)
+                        navController.navigate("booking_confirmed/${newId.toInt()}") {
+                            // remove select_date_time and doctor_profile from back stack
+                            // so the back button from the confirmation screen goes to appointments, not the form
+                            popUpTo("appointments") { inclusive = false }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = "booking_confirmed/{appointmentId}",
+            arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val appointmentId = backStackEntry.arguments?.getInt("appointmentId") ?: 0
+            BookingConfirmedScreen(
+                appointmentId = appointmentId,
+                appointmentDao = appointmentDao,
+                onViewNotification = { navController.navigate("notifications") },
+                onBackToHome = {
+                    navController.navigate("home") { popUpTo("home") { inclusive = true } }
+                }
             )
         }
     }
