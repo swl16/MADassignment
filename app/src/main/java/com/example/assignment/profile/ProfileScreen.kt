@@ -21,6 +21,7 @@ fun ProfileScreen(
     onLogOut: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToEmergency: () -> Unit = {},
+    onNavigateToAppointments: () -> Unit = {}
 ) {
     // 1. Create a blank state variable to hold the user data
     var currentUser by remember { mutableStateOf<User?>(null) }
@@ -132,7 +133,7 @@ fun ProfileScreen(
 
             SettingsRowItem(
                 icon = "🕒", title = "Appointment history", subtitle = "Past and upcoming appointments", iconColor = Color.Gray,
-                onClick = { /* TODO later */ } )
+                onClick = { onNavigateToAppointments() } )
             SettingsRowItem(
                 icon = "🔵", title = "Notification settings", subtitle = "Control alerts and reminders", iconColor = Color(0xFF1E50FF),
                 onClick = { onNavigateToSettings() })

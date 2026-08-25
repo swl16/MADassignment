@@ -38,6 +38,7 @@ import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.profile.EditProfileScreen
 import com.example.assignment.profile.ProfileScreen
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -145,7 +146,8 @@ fun AppNavigation() {
                     navController.navigate("login") {
                         popUpTo(navController.graph.id) { inclusive = true }
                     }
-                }
+                },
+                onNavigateToAppointments = {navController.navigate("appointment_history")}
             )
         }
 
@@ -174,7 +176,7 @@ fun AppNavigation() {
             )
         }
 
-        composable("appointmentHistory"){
+        composable("appointment_history"){
             AppointmentHistoryScreen(
                 onBack = { navController.popBackStack() },
                 onBookAppointment = { navController.navigate("appointments") },
@@ -218,8 +220,16 @@ fun AppNavigation() {
                     it.name.equals(appointment.doctorName, ignoreCase = true)
                 } ?: sampleDoctors.first()
 
+                val initialDate = try {
+                    LocalDate.parse(appointment.date, DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+                } catch (e: Exception) {
+                    LocalDate.now()
+                }
+
                 SelectDateTimeScreen(
                     doctor = matchingDoctor,
+                    initialDate = initialDate,
+                    initialTime = appointment.time,
                     isRescheduling = true,
                     onNavigateBack = { navController.popBackStack() },
                     onConfirm = { newDate, newTime ->
