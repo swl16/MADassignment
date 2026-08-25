@@ -49,6 +49,7 @@ fun AppNavigation() {
     val db = remember { AppDatabase.getDatabase(context) }
     val userDao = db.userDao()
     val appointmentDao = db.appointmentDao()
+    val emergencyContactDao = db.emergencyContactDao()
 
     val appointments = remember { mutableStateListOf<Appointment>() }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
@@ -179,6 +180,8 @@ fun AppNavigation() {
 
         composable("emergency_contact") {
             com.example.assignment.profile.EmergencyContactScreen(
+                userDao = userDao,
+                emergencyContactDao = emergencyContactDao,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
