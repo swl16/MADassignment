@@ -142,14 +142,13 @@ fun AppNavigation() {
                 onNavigateToEdit = { navController.navigate("edit_profile") },
                 onNavigateToSettings = { navController.navigate("notification_settings") },
                 onNavigateToEmergency = { navController.navigate("emergency_contact") },
-                onNavigateToAppointmentHistory = { navController.navigate("appointmentHistory") },
+                onNavigateToAppointmentHistory = { navController.navigate("appointment_history") },
                 onNavigateToChangePassword = { navController.navigate("change_password") },
                 onLogOut = {
                     navController.navigate("login") {
                         popUpTo(navController.graph.id) { inclusive = true }
                     }
-                },
-                onNavigateToAppointments = {navController.navigate("appointment_history")}
+                }
             )
         }
 

@@ -157,7 +157,6 @@ fun ProfileScreen(
 
             SettingsRowItem(
                 icon = "🕒", title = "Appointment history", subtitle = "Past and upcoming appointments", iconColor = Color.Gray,
-                onClick = { onNavigateToAppointments() } )
                 onClick = { onNavigateToAppointmentHistory() } )
             SettingsRowItem(
                 icon = "🔵", title = "Notification settings", subtitle = "Control alerts and reminders", iconColor = Color(0xFF1E50FF),
