@@ -10,18 +10,34 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 @Composable
 fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     // State variables for the toggle switches
     var apptReminders by remember { mutableStateOf(true) }
     var medReminders by remember { mutableStateOf(true) }
     var recordUpdates by remember { mutableStateOf(true) }
     var emergencyAlerts by remember { mutableStateOf(true) }
     var healthTips by remember { mutableStateOf(false) }
+
+    // 1. Load whatever was saved last time, as soon as the screen opens
+    LaunchedEffect(Unit) {
+        notificationPrefsFlow(context).collect { prefs ->
+            apptReminders = prefs.apptReminders
+            medReminders = prefs.medReminders
+            recordUpdates = prefs.recordUpdates
+            emergencyAlerts = prefs.emergencyAlerts
+            healthTips = prefs.healthTips
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -67,8 +83,23 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Save Settings Button — actually persists now
             Button(
-                onClick = { onNavigateBack() },
+                onClick = {
+                    scope.launch {
+                        saveNotificationPrefs(
+                            context,
+                            NotificationPrefs(
+                                apptReminders = apptReminders,
+                                medReminders = medReminders,
+                                recordUpdates = recordUpdates,
+                                emergencyAlerts = emergencyAlerts,
+                                healthTips = healthTips
+                            )
+                        )
+                        onNavigateBack()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E50FF))

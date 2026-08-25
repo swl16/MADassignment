@@ -5,11 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [User::class, Appointment::class], version = 2, exportSchema = false)
+@Database(entities = [User::class, Appointment::class, EmergencyContact::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
     abstract fun appointmentDao(): AppointmentDao
+    abstract fun emergencyContactDao(): EmergencyContactDao
 
     companion object {
         @Volatile
@@ -22,7 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "healthcare_database"
                 )
-                    // version bumped 1 -> 2 for the new appointments table.
+                    // version bumped 2 -> 3 for the new emergency_contacts table.
                     // fallbackToDestructiveMigration is fine for coursework (wipes local data on schema change,
                     // no migration needed for demo/marking purposes).
                     .fallbackToDestructiveMigration()

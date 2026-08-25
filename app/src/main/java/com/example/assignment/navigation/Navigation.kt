@@ -25,7 +25,6 @@ import androidx.navigation.navArgument
 import com.example.assignment.appointment.AppointmentDetailScreen
 import com.example.assignment.appointment.AppointmentHistoryScreen
 import com.example.assignment.appointment.BookingConfirmedScreen
-import com.example.assignment.appointment.Doctor
 import com.example.assignment.appointment.DoctorProfileScreen
 import com.example.assignment.appointment.SelectDateTimeScreen
 import com.example.assignment.appointment.sampleDoctors
@@ -51,6 +50,7 @@ fun AppNavigation() {
     val db = remember { AppDatabase.getDatabase(context) }
     val userDao = db.userDao()
     val appointmentDao = db.appointmentDao()
+    val emergencyContactDao = db.emergencyContactDao()
 
     val appointments = remember { mutableStateListOf<Appointment>() }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
@@ -142,12 +142,22 @@ fun AppNavigation() {
                 onNavigateToEdit = { navController.navigate("edit_profile") },
                 onNavigateToSettings = { navController.navigate("notification_settings") },
                 onNavigateToEmergency = { navController.navigate("emergency_contact") },
+                onNavigateToAppointmentHistory = { navController.navigate("appointmentHistory") },
+                onNavigateToChangePassword = { navController.navigate("change_password") },
                 onLogOut = {
                     navController.navigate("login") {
                         popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
                 onNavigateToAppointments = {navController.navigate("appointment_history")}
+            )
+        }
+
+        composable("change_password") {
+            com.example.assignment.authentication.SetPasswordScreen(
+                userDao = userDao,
+                onBackClick = { navController.popBackStack() },
+                onPasswordCreated = { navController.popBackStack() }
             )
         }
 
@@ -172,6 +182,8 @@ fun AppNavigation() {
 
         composable("emergency_contact") {
             com.example.assignment.profile.EmergencyContactScreen(
+                userDao = userDao,
+                emergencyContactDao = emergencyContactDao,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -210,7 +222,7 @@ fun AppNavigation() {
 
         composable("reschedule_appointment/{appointmentId}",
             arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
-            ) { backStackEntry ->
+        ) { backStackEntry ->
             val appointmentId = backStackEntry.arguments?.getInt("appointmentId")
             val scope = rememberCoroutineScope()
             val appointment = appointments.find { it.id == appointmentId }
