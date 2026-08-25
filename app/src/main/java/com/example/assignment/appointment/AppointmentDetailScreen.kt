@@ -1,6 +1,6 @@
 package com.example.assignment.appointment
 
-import android.R.attr.fontWeight
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -25,7 +25,7 @@ import com.example.assignment.database.Appointment
 @Composable
 fun AppointmentDetailScreen(
     navController: NavController,
-    appointment: Appointment?,
+    appointment: Appointment?,doctor: Doctor,
     onCancelAppointment: (Appointment) -> Unit = {}
 ) {
     var showCancelDialog by remember { mutableStateOf(false) }
@@ -158,7 +158,7 @@ fun AppointmentDetailScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    text = " 4.9 • ",
+                                    text = "${doctor.rating} • ",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF1F6BE8)
@@ -285,5 +285,5 @@ fun InfoRow(label: String, value: String) {
 @Composable
 fun AppointmentDetailPreview() {
     // Provide an empty list or mock data for preview
-    AppointmentDetailScreen(navController = rememberNavController(),Appointment(1,2001,"Sarah Lim", "General", "10/10/2026","10:30","HealthCare Clinic","Upcoming","General reason"))
+    AppointmentDetailScreen(navController = rememberNavController(),Appointment(1,2001,"Sarah Lim", "General", "10/10/2026","10:30","HealthCare Clinic","Upcoming","General reason"), sampleDoctors[1])
 }

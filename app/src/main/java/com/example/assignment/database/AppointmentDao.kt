@@ -1,8 +1,10 @@
 package com.example.assignment.database
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -19,4 +21,10 @@ interface AppointmentDao {
     // 3. Used by BookingConfirmedScreen to re-fetch the appointment just created
     @Query("SELECT * FROM appointments WHERE id = :id")
     suspend fun getById(id: Int): Appointment?
+
+    @Update
+    suspend fun update(appointment: Appointment)
+
+    @Delete
+    suspend fun delete(appointment: Appointment)
 }

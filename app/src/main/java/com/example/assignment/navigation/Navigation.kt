@@ -188,11 +188,20 @@ fun AppNavigation() {
         }
 
         composable("appointment_detail") {
+            val scope = rememberCoroutineScope()
+
+            val doctor = sampleDoctors.find {
+                it.name.equals(selectedAppointment?.doctorName, ignoreCase = true)
+            } ?: sampleDoctors.first()
+
             AppointmentDetailScreen(
                 navController = navController,
                 appointment = selectedAppointment,
+                doctor = doctor,
                 onCancelAppointment = { toCancel ->
-                    appointments.remove(toCancel)
+                    scope.launch {
+                        appointmentDao.delete(toCancel)
+                    }
                 }
             )
         }
@@ -201,35 +210,38 @@ fun AppNavigation() {
             arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
             ) { backStackEntry ->
             val appointmentId = backStackEntry.arguments?.getInt("appointmentId")
+            val scope = rememberCoroutineScope()
             val appointment = appointments.find { it.id == appointmentId }
 
             if (appointment != null) {
-                val matchingDoctor = sampleDoctors.find { it.name.equals(appointment.doctorName, ignoreCase = true) }
-                    ?: Doctor(
-                        name = appointment.doctorName,
-                        specialty = appointment.specialty,
-                        rating = 4.9,
-                        availability = "Mon - Fri",
-                        experienceYears = 5,
-                        patientsCount = "1.0k",
-                        about = "Medical Practitioner",
-                        availableTimes = listOf("9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM"),
-                        location = appointment.location
-                    )
+                val matchingDoctor = sampleDoctors.find {
+                    it.name.equals(appointment.doctorName, ignoreCase = true)
+                } ?: sampleDoctors.first()
 
                 SelectDateTimeScreen(
                     doctor = matchingDoctor,
                     isRescheduling = true,
                     onNavigateBack = { navController.popBackStack() },
                     onConfirm = { newDate, newTime ->
+                        val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+
+                        // 1. Update in-memory list if still used
                         val index = appointments.indexOfFirst { it.id == appointment.id }
                         if (index != -1) {
                             appointments[index] = appointment.copy(
-                                date = newDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                date = formattedDate,
                                 time = newTime
                             )
                         }
-                        navController.popBackStack()
+
+                        scope.launch {
+                            val updatedAppointment = appointment.copy(
+                                date = formattedDate,
+                                time = newTime
+                            )
+                            appointmentDao.update(updatedAppointment)
+                            navController.popBackStack()
+                        }
                     }
                 )
             }
