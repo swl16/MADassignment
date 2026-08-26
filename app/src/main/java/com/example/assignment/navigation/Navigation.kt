@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -36,9 +37,11 @@ import com.example.assignment.profile.EditProfileScreen
 import com.example.assignment.profile.ProfileScreen
 import com.example.assignment.reminder.AddReminderScreen
 import com.example.assignment.reminder.ReminderDetailsScreen
+import com.example.assignment.reminder.ReminderScreen
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
 
 @Composable
 fun AppNavigation() {
@@ -50,6 +53,8 @@ fun AppNavigation() {
     val userDao = db.userDao()
     val appointmentDao = db.appointmentDao()
     val emergencyContactDao = db.emergencyContactDao()
+
+    val reminderViewModel: com.example.assignment.database.ReminderViewModel = viewModel()
 
     val appointments = remember { mutableStateListOf<Appointment>() }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
@@ -102,11 +107,11 @@ fun AppNavigation() {
         }
 
         composable("reminders") {
-            com.example.assignment.reminder.ReminderScreen(navController, reminderViewModel)
+            ReminderScreen(navController, reminderViewModel)
         }
 
-        composable("add_reminder") {
-            com.example.assignment.reminder.AddReminderScreen(navController, reminderViewModel)
+        composable("addReminder") {
+            AddReminderScreen(navController, reminderViewModel)
         }
 
         composable(
@@ -115,7 +120,7 @@ fun AppNavigation() {
         ) { backStackEntry ->
             // Extract the documentId from the route and pass it to the Details screen
             val docId = backStackEntry.arguments?.getString("documentId") ?: ""
-            com.example.assignment.reminder.ReminderDetailsScreen(navController, reminderViewModel, docId)
+            ReminderDetailsScreen(navController, reminderViewModel, docId)
         }
 
         composable("appointments") {
@@ -188,13 +193,6 @@ fun AppNavigation() {
         composable("notifications") {
             com.example.assignment.notification.NotificationsScreen(
                 onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable("addReminder") {
-            com.example.assignment.reminder.AddReminderScreen(
-                onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() }
             )
         }
 
