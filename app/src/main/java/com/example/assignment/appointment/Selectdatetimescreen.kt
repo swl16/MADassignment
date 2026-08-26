@@ -1,7 +1,5 @@
 package com.example.assignment.appointment
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +51,6 @@ import java.util.Locale
 
 private val timeSlots = listOf("9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM")
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SelectDateTimeScreen(
     doctor: Doctor,
@@ -248,7 +245,6 @@ fun SelectDateTimeScreen(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DayChip(day: LocalDate, selected: Boolean, onClick: () -> Unit) {
     Column(
@@ -297,7 +293,6 @@ private fun TimeSlotButton(label: String, selected: Boolean, modifier: Modifier 
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun SelectDateTimePreview() {
