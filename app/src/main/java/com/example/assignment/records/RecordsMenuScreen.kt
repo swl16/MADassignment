@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -36,6 +37,7 @@ val TextSecondary = Color(0xFF8891A5)
 @Composable
 fun RecordsMenuScreen(
     recordDao: RecordDao,
+    onBackClick: () -> Unit,
     onUploadClick: () -> Unit,
     onCategoryClick: (RecordCategory) -> Unit,
     onRecordClick: (Long) -> Unit
@@ -65,7 +67,12 @@ fun RecordsMenuScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Medical Records", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                }
+                Text(text = "Medical Records", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            }
             Button(
                 onClick = onUploadClick,
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),

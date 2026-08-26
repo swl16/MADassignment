@@ -2,6 +2,7 @@ package com.example.assignment.records
 
 import android.R.attr.type
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -34,76 +35,89 @@ fun RecordsMain(navController: NavController) {
 
     val recordsNavController = rememberNavController()
 
-    NavHost(navController = recordsNavController, startDestination = "records_menu") {
-
-        composable("records_menu") {
-            RecordsMenuScreen(
-                recordDao = recordDao,
-                onUploadClick = { recordsNavController.navigate("upload_record") },
-                onCategoryClick = { category ->
-                    recordsNavController.navigate("records_category/${category.name}")
-                },
-                onRecordClick = { recordId ->
-                    recordsNavController.navigate("record_detail/$recordId")
-                }
-            )
+    Scaffold(
+        bottomBar = {
+            BottomNavBar(navController = navController, selectedIndex = 3)
         }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            NavHost(navController = recordsNavController, startDestination = "records_menu") {
 
-        composable(
-            route = "upload_record?categoryName={categoryName}",
-            arguments = listOf(
-                navArgument("categoryName") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
+                composable("records_menu") {
+                    RecordsMenuScreen(
+                        recordDao = recordDao,
+                        onBackClick = { navController.popBackStack() },
+                        onUploadClick = { recordsNavController.navigate("upload_record") },
+                        onCategoryClick = { category ->
+                            recordsNavController.navigate("records_category/${category.name}")
+                        },
+                        onRecordClick = { recordId ->
+                            recordsNavController.navigate("record_detail/$recordId")
+                        }
+                    )
                 }
-            )
-        ) { backStackEntry ->
-            val categoryName = backStackEntry.arguments?.getString("categoryName")
-            val preselectedCategory = categoryName?.let { RecordCategory.valueOf(it) }
-            UploadRecordScreen(
-                recordDao = recordDao,
-                fileStorageHelper = fileStorageHelper,
-                preselectedCategory = preselectedCategory,
-                onBackClick = { recordsNavController.popBackStack() },
-                onUploadComplete = { recordsNavController.popBackStack() }
-            )
-        }
 
-        composable(
-            route = "record_detail/{recordId}",
-            arguments = listOf(navArgument("recordId") { type = NavType.LongType })
-        ) { backStackEntry ->
-            val recordId = backStackEntry.arguments?.getLong("recordId") ?: 0L
-            RecordDetailScreen(
-                recordId = recordId,
-                recordDao = recordDao,
-                fileStorageHelper = fileStorageHelper,
-                onBackClick = { recordsNavController.popBackStack() },
-                onDeleteComplete = {
-                    recordsNavController.popBackStack("records_menu", inclusive = false)
+                composable(
+                    route = "upload_record?categoryName={categoryName}",
+                    arguments = listOf(
+                        navArgument("categoryName") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) { backStackEntry ->
+                    val categoryName = backStackEntry.arguments?.getString("categoryName")
+                    val preselectedCategory = categoryName?.let { RecordCategory.valueOf(it) }
+                    UploadRecordScreen(
+                        recordDao = recordDao,
+                        fileStorageHelper = fileStorageHelper,
+                        preselectedCategory = preselectedCategory,
+                        onBackClick = { recordsNavController.popBackStack() },
+                        onUploadComplete = { recordsNavController.popBackStack() }
+                    )
                 }
-            )
-        }
 
-        composable(
-            route = "records_category/{categoryName}",
-            arguments = listOf(navArgument("categoryName") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val categoryName = backStackEntry.arguments?.getString("categoryName")
-                ?: RecordCategory.LAB_RESULTS.name
-            val category = RecordCategory.valueOf(categoryName)
-            CategoryListScreen(
-                category = category,
-                recordDao = recordDao,
-                onBackClick = { recordsNavController.popBackStack() },
-                onUploadClick = {
-                    recordsNavController.navigate("upload_record?categoryName=${category.name}")
-                },
-                onRecordClick = { recordId ->
-                    recordsNavController.navigate("record_detail/$recordId")
+                composable(
+                    route = "record_detail/{recordId}",
+                    arguments = listOf(navArgument("recordId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val recordId = backStackEntry.arguments?.getLong("recordId") ?: 0L
+                    RecordDetailScreen(
+                        recordId = recordId,
+                        recordDao = recordDao,
+                        fileStorageHelper = fileStorageHelper,
+                        onBackClick = { recordsNavController.popBackStack() },
+                        onDeleteComplete = {
+                            recordsNavController.popBackStack("records_menu", inclusive = false)
+                        }
+                    )
                 }
-            )
+
+                composable(
+                    route = "records_category/{categoryName}",
+                    arguments = listOf(navArgument("categoryName") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val categoryName = backStackEntry.arguments?.getString("categoryName")
+                        ?: RecordCategory.LAB_RESULTS.name
+                    val category = RecordCategory.valueOf(categoryName)
+                    CategoryListScreen(
+                        category = category,
+                        recordDao = recordDao,
+                        onBackClick = { recordsNavController.popBackStack() },
+                        onUploadClick = {
+                            recordsNavController.navigate("upload_record?categoryName=${category.name}")
+                        },
+                        onRecordClick = { recordId ->
+                            recordsNavController.navigate("record_detail/$recordId")
+                        }
+                    )
+                }
+            }
         }
     }
 }
