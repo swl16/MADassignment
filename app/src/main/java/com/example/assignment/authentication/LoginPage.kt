@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -36,7 +38,7 @@ import kotlinx.coroutines.launch
 fun LoginPage(
     userDao: com.example.assignment.database.UserDao,
     onNavigateToSignUp: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {} // <-- NEW!
+    onNavigateToHome: () -> Unit = {}
 ){
     val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("")}
@@ -49,6 +51,8 @@ fun LoginPage(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp)
+            .verticalScroll(rememberScrollState())
+
     ){
         Spacer(modifier = Modifier.height(60.dp))
 
