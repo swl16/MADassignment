@@ -1,7 +1,5 @@
 package com.example.assignment.navigation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -17,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -36,11 +35,14 @@ import com.example.assignment.database.Appointment
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.profile.EditProfileScreen
 import com.example.assignment.profile.ProfileScreen
+import com.example.assignment.reminder.AddReminderScreen
+import com.example.assignment.reminder.ReminderDetailsScreen
+import com.example.assignment.reminder.ReminderScreen
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@RequiresApi(Build.VERSION_CODES.O)
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -51,6 +53,8 @@ fun AppNavigation() {
     val userDao = db.userDao()
     val appointmentDao = db.appointmentDao()
     val emergencyContactDao = db.emergencyContactDao()
+
+    val reminderViewModel: com.example.assignment.database.ReminderViewModel = viewModel()
 
     val appointments = remember { mutableStateListOf<Appointment>() }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
@@ -103,7 +107,20 @@ fun AppNavigation() {
         }
 
         composable("reminders") {
-            com.example.assignment.reminder.ReminderScreen(navController)
+            ReminderScreen(navController, reminderViewModel)
+        }
+
+        composable("addReminder") {
+            AddReminderScreen(navController, reminderViewModel)
+        }
+
+        composable(
+            route = "reminder_details/{documentId}",
+            arguments = listOf(navArgument("documentId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            // Extract the documentId from the route and pass it to the Details screen
+            val docId = backStackEntry.arguments?.getString("documentId") ?: ""
+            ReminderDetailsScreen(navController, reminderViewModel, docId)
         }
 
         composable("appointments") {

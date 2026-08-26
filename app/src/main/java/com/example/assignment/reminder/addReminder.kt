@@ -1,6 +1,7 @@
 package com.example.assignment.reminder
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,22 +12,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.navigation.NavController
+import com.example.assignment.database.Reminder
+import com.example.assignment.database.ReminderViewModel
 
 val AppBackground = Color(0xFFF4F7FB)
 val PrimaryBlue = Color(0xFF246BFD)
@@ -40,9 +53,9 @@ val RedDanger = Color(0xFFFF4B4B)
 fun CustomTextField(
     label: String,
     value: String,
-    placeholder: String = "",
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholder: String = ""
 ) {
     Column(modifier = modifier.padding(vertical = 8.dp)) {
         Text(
@@ -67,14 +80,84 @@ fun CustomTextField(
         )
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(title: String, onBackClick:() -> Unit){
+fun CustomDropdownField(
+    label: String,
+    selectedValue: String,
+    options: List<String>,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.padding(vertical = 8.dp)) {
+        Text(
+            text = label,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = TextDark
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+            TextField(
+                value = selectedValue,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                placeholder = { Text("Select Time", color = TextGray) },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(12.dp),
+                // menuAnchor is required to position the dropdown menu correctly
+                modifier = Modifier
+                    .menuAnchor(
+                        type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                        enabled = true
+                    )
+                    .fillMaxWidth()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onValueChange(option)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TopBar(title: String, onBackClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
-    ){
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+    ) {
         IconButton(onClick = onBackClick) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Back", tint = TextDark)
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Back",
+                tint = TextDark
+            )
         }
         Text(
             text = title,
@@ -87,7 +170,9 @@ fun TopBar(title: String, onBackClick:() -> Unit){
 }
 
 @Composable
-fun AddReminderScreen(onBack: () -> Unit) {
+fun AddReminderScreen(navController: NavController,
+                      viewModel: ReminderViewModel
+) {
     var medicineName by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
     var frequency by remember { mutableStateOf("") }
@@ -95,15 +180,107 @@ fun AddReminderScreen(onBack: () -> Unit) {
     var instruction by remember { mutableStateOf("") }
     var notificationEnable by remember { mutableStateOf(true) }
 
-    Column(modifier = Modifier.fillMaxSize().background(AppBackground).padding(20.dp)) {
+    val timeOptions = listOf("8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM",
+        "11:00 AM","11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
+        "3:00 PM","3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM","7:00 PM",
+        "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM")
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppBackground)
+            .padding(20.dp)
+    ) {
 
-        TopBar(title = "Add Reminder", onBackClick = onBack)
+        TopBar(title = "Add Reminder", onBackClick = { navController.popBackStack() })
 
         CustomTextField(
-            label = "Medicine Name",
             value = medicineName,
+            onValueChange = { medicineName = it },
+            label = "Medicine Name",
             placeholder = "e.g. Amoxicillin",
-            onValueChange = { medicineName = it }
+            modifier = Modifier.fillMaxWidth()
+
         )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            CustomTextField(
+                value = dosage,
+                onValueChange = { dosage = it },
+                label = "Dosage",
+                placeholder = "1 capsule",
+                modifier = Modifier.weight(1f)
+            )
+            CustomTextField(
+                value = frequency,
+                onValueChange = { frequency = it },
+                label = "Frequency",
+                placeholder = "Once daily",
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        CustomDropdownField(
+            label = "Reminder Time",
+            selectedValue = reminderTime,
+            options = timeOptions,
+            onValueChange = { reminderTime = it })
+
+        CustomTextField(
+            value = instruction,
+            onValueChange = { instruction = it },
+            label = "Instructions",
+            placeholder = "After dinner",
+            modifier = Modifier.fillMaxWidth()
+
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    "Notification",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = TextDark
+                )
+                Text("Alert me at reminder time", color = TextGray, fontSize = 14.sp)
+            }
+            Switch(
+                checked = notificationEnable,
+                onCheckedChange = { notificationEnable = it },
+                colors = SwitchDefaults.colors(checkedTrackColor = PrimaryBlue)
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = {
+                val newReminder = Reminder(
+                    medicineName = medicineName,
+                    dosage = dosage,
+                    frequency = frequency,
+                    time = reminderTime,
+                    instructions = instruction,
+                    isNotificationEnabled = notificationEnable,
+                    isActive = true
+                )
+                // 2. Save to Firestore via ViewModel
+                viewModel.saveReminder(newReminder)
+                // 3. Navigate back to the list
+                navController.popBackStack()},
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(PrimaryBlue),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Save Reminder", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
