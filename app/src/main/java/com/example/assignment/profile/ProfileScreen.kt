@@ -41,7 +41,7 @@ import com.example.assignment.database.UserDao
 @Composable
 fun ProfileScreen(
     userDao: UserDao,
-    username: String, // <-- NEW: Accept the username
+    username: String,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: () -> Unit = {},
     onLogOut: () -> Unit = {},
@@ -66,7 +66,7 @@ fun ProfileScreen(
     val initials = currentUser?.fullName?.take(2)?.uppercase() ?: "--"
 
     // Use username as the healthcare ID base since id is gone
-    val healthcareId = "HC-USR-${currentUser?.username?.take(4)?.uppercase() ?: "0000"}"
+    val healthcareId = "${currentUser?.username?.take(4)?.uppercase() ?: "0000"}"
     // Add this to remember if the pop-up should be visible!
     var showLogoutDialog by remember { mutableStateOf(false) }
 
