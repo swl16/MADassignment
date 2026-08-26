@@ -18,7 +18,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +33,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.assignment.ui.theme.appTextFieldColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -84,12 +84,7 @@ fun SignUpScreen(
             placeholder = {Text("eg.John",color=Color(0xFF8DA6FF))},
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE5EDFF),
-                unfocusedContainerColor = Color(0xFFE5EDFF),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier=Modifier.height(10.dp))
@@ -110,12 +105,7 @@ fun SignUpScreen(
             placeholder = { Text("********", color=Color(0xFF8DA6FF))},
             modifier= Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE5EDFF),
-                unfocusedContainerColor = Color(0xFFE5EDFF),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -135,12 +125,7 @@ fun SignUpScreen(
             placeholder = { Text("eg. example123@example.com", color = Color(0xFF8DA6FF))},
             shape = RoundedCornerShape(12.dp),
             modifier= Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE5EDFF),
-                unfocusedContainerColor = Color(0xFFE5EDFF),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -160,12 +145,7 @@ fun SignUpScreen(
             placeholder = { Text("+60 12-3456789", color = Color(0xFF8DA6FF))},
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE5EDFF),
-                unfocusedContainerColor = Color(0xFFE5EDFF),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -184,12 +164,7 @@ fun SignUpScreen(
             placeholder = { Text(" DD/MM/YY ",color = Color(0xFF8DA6FF))},
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE5EDFF),
-                unfocusedContainerColor = Color(0xFFE5EDFF),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
         Spacer(modifier = Modifier.height(50.dp))
 

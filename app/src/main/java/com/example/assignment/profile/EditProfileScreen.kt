@@ -10,15 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.assignment.database.User
 import com.example.assignment.database.UserDao
+import com.example.assignment.ui.theme.appTextFieldColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,7 +66,6 @@ fun EditProfileScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8FAFF))
-
     ) {
         // We reuse your StandardTopBar, but leave the actionText blank!
         StandardTopBar(
@@ -81,9 +78,7 @@ fun EditProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(10.dp))
@@ -95,12 +90,7 @@ fun EditProfileScreen(
                 modifier = Modifier.size(90.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = initials,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E50FF)
-                    )
+                    Text(text = initials, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E50FF))
                 }
             }
 
@@ -117,14 +107,8 @@ fun EditProfileScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // Custom Text Fields matching Figma
-            ProfileInputField(
-                label = "Full name",
-                value = fullName,
-                onValueChange = { fullName = it })
-            ProfileInputField(
-                label = "Email address",
-                value = email,
-                onValueChange = { email = it })
+            ProfileInputField(label = "Full name", value = fullName, onValueChange = { fullName = it })
+            ProfileInputField(label = "Email address", value = email, onValueChange = { email = it })
             ProfileInputField(label = "Phone number", value = phone, onValueChange = { phone = it })
             ProfileInputField(label = "Date of birth", value = dob, onValueChange = { dob = it })
 
@@ -163,28 +147,14 @@ fun EditProfileScreen(
 // Reusable custom text field to perfectly match the white Figma cards!
 @Composable
 fun ProfileInputField(label: String, value: String, onValueChange: (String) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1A1A)
-        )
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedIndicatorColor = Color.Transparent, // Hides the bottom line
-                unfocusedIndicatorColor = Color.Transparent
-            ),
+            colors = appTextFieldColors(Color.White),
             shape = RoundedCornerShape(12.dp)
         )
     }

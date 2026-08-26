@@ -7,9 +7,6 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-// Needs this dependency in app-level build.gradle:
-// implementation("androidx.datastore:datastore-preferences:1.1.1")
-
 val Context.notificationDataStore by preferencesDataStore(name = "notification_settings")
 
 private object NotificationPrefsKeys {

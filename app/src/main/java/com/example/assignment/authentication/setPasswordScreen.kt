@@ -14,7 +14,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.assignment.database.UserDao
 import com.example.assignment.database.hashPassword
+import com.example.assignment.ui.theme.appTextFieldColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -111,12 +111,7 @@ fun SetPasswordScreen(
             placeholder = { Text("********", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE5EDFF),
-                unfocusedContainerColor = Color(0xFFE5EDFF),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -136,12 +131,7 @@ fun SetPasswordScreen(
             placeholder = { Text("********", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE5EDFF),
-                unfocusedContainerColor = Color(0xFFE5EDFF),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            )
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier = Modifier.height(40.dp))

@@ -22,7 +22,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.example.assignment.database.EmergencyContact
 import com.example.assignment.database.EmergencyContactDao
 import com.example.assignment.database.UserDao
+import com.example.assignment.ui.theme.appTextFieldColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -209,12 +209,7 @@ fun ContactInputField(label: String, value: String, onValueChange: (String) -> U
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
+            colors = appTextFieldColors(Color.White),
             shape = RoundedCornerShape(12.dp)
         )
     }
