@@ -54,7 +54,7 @@ fun AppNavigation() {
 
     val appointments = remember { mutableStateListOf<Appointment>() }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
-
+    var activeUsername by remember { mutableStateOf("") }
 
     NavHost(navController = navController, startDestination = "starting") {
 
@@ -70,7 +70,8 @@ fun AppNavigation() {
             LoginPage(
                 userDao = userDao,
                 onNavigateToSignUp = { navController.navigate("signup") },
-                onNavigateToHome = {
+                onNavigateToHome = { username -> // <-- Accept the username
+                    activeUsername = username
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -82,7 +83,8 @@ fun AppNavigation() {
             SignUpScreen(
                 userDao = userDao,
                 onNavigateToLogin = { navController.navigate("login") },
-                onNavigateToHome = {
+                onNavigateToHome = { username -> // <-- Accept the username
+                    activeUsername = username
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -94,8 +96,9 @@ fun AppNavigation() {
             HomeScreen(
                 navController = navController,
                 userDao = userDao,
+                loggedInUsername = activeUsername, // <-- Pass it down
                 onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToNotifications = { navController.navigate("notifications") } // <-- ADD THIS LINE
+                onNavigateToNotifications = { navController.navigate("notifications") }
             )
         }
 
@@ -138,6 +141,7 @@ fun AppNavigation() {
         composable("profile") {
             ProfileScreen(
                 userDao = userDao,
+                username = activeUsername, // <-- Pass it here
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { navController.navigate("edit_profile") },
                 onNavigateToSettings = { navController.navigate("notification_settings") },
@@ -155,6 +159,7 @@ fun AppNavigation() {
         composable("change_password") {
             com.example.assignment.authentication.SetPasswordScreen(
                 userDao = userDao,
+                username = activeUsername, // <-- Pass it here
                 onBackClick = { navController.popBackStack() },
                 onPasswordCreated = { navController.popBackStack() }
             )
@@ -163,6 +168,7 @@ fun AppNavigation() {
         composable("edit_profile") {
             EditProfileScreen(
                 userDao = userDao,
+                username = activeUsername, // <-- Pass it here
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -181,8 +187,8 @@ fun AppNavigation() {
 
         composable("emergency_contact") {
             com.example.assignment.profile.EmergencyContactScreen(
-                userDao = userDao,
                 emergencyContactDao = emergencyContactDao,
+                username = activeUsername, // <-- Pass it here
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -195,8 +201,8 @@ fun AppNavigation() {
                     selectedAppointment = appointment
                     navController.navigate("appointment_detail")
                 },
-                userDao = userDao,
-                appointmentDao = appointmentDao
+                appointmentDao = appointmentDao,
+                username = activeUsername // <-- Pass it here
             )
         }
 
@@ -281,9 +287,8 @@ fun AppNavigation() {
                 onNavigateBack = { navController.popBackStack() },
                 onConfirm = { date, time ->
                     scope.launch {
-                        val currentUser = userDao.getLatestUser()
                         val newAppointment = Appointment(
-                            userId = currentUser?.id ?: 0,
+                            username = activeUsername,
                             doctorName = doctor.name,
                             specialty = doctor.specialty,
                             date = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
@@ -291,8 +296,6 @@ fun AppNavigation() {
                         )
                         val newId = appointmentDao.insert(newAppointment)
                         navController.navigate("booking_confirmed/${newId.toInt()}") {
-                            // remove select_date_time and doctor_profile from back stack
-                            // so the back button from the confirmation screen goes to appointments, not the form
                             popUpTo("appointments") { inclusive = false }
                         }
                     }

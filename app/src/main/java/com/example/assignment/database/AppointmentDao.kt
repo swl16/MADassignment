@@ -15,8 +15,8 @@ interface AppointmentDao {
     suspend fun insert(appointment: Appointment): Long
 
     // 2. Used by AppointmentScreen to show this user's appointment list (auto-updates UI)
-    @Query("SELECT * FROM appointments WHERE userId = :userId ORDER BY id DESC")
-    fun getAppointmentsForUser(userId: Int): Flow<List<Appointment>>
+    @Query("SELECT * FROM appointments WHERE username = :username ORDER BY id DESC")
+    fun getAppointmentsForUser(username: String): Flow<List<Appointment>>
 
     // 3. Used by BookingConfirmedScreen to re-fetch the appointment just created
     @Query("SELECT * FROM appointments WHERE id = :id")

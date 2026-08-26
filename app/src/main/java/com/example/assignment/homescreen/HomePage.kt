@@ -44,6 +44,7 @@ import com.example.assignment.navigation.BottomNavBar
 fun HomeScreen(
     navController: NavController,
     userDao: UserDao, // <-- 1. Accept the database
+    loggedInUsername: String, // <-- NEW: Accept the username
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {}
 ) {
@@ -52,8 +53,8 @@ fun HomeScreen(
     var firstName by remember { mutableStateOf("User") }
 
     // 3. Fetch the data right when the screen opens
-    LaunchedEffect(Unit) {
-        val user = userDao.getLatestUser()
+    LaunchedEffect(loggedInUsername) {
+        val user = userDao.getUserByUsername(loggedInUsername)
         if (user != null) {
             initials = user.fullName.take(2).uppercase()
             // Split the full name by spaces and just take their first name for a friendly greeting

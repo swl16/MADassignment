@@ -38,6 +38,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SetPasswordScreen(
     userDao: UserDao? = null, // null = design/preview mode, just calls onPasswordCreated without saving
+    username: String = "",    // <-- NEW: Accept the username
     onBackClick: () -> Unit = {},
     onPasswordCreated: () -> Unit = {}
 ) {
@@ -162,7 +163,7 @@ fun SetPasswordScreen(
                     errorMessage = ""
                     if (userDao != null) {
                         scope.launch {
-                            val currentUser = userDao.getLatestUser()
+                            val currentUser = userDao.getUserByUsername(username)
                             if (currentUser != null) {
                                 userDao.updateUser(currentUser.copy(password = hashPassword(password)))
                             }

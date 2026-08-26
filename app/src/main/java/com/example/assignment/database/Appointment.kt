@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class Appointment(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val userId: Int,          // links this appointment to a User
+    val username: String,     // links this appointment to a User's username
     val doctorName: String,
     val specialty: String,
     val date: String,         // stored as "Thursday, 16 July 2026" (display-ready)

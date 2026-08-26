@@ -40,9 +40,10 @@ import kotlinx.coroutines.launch
 fun SignUpScreen(
     userDao: com.example.assignment.database.UserDao,
     onNavigateToLogin: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {} // <-- NEW!
+    onNavigateToHome: (String) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
+    var username by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -71,6 +72,24 @@ fun SignUpScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
+            text = "Username",
+            fontSize = 14.sp,
+            fontWeight = SemiBold,
+            color = Color.DarkGray
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = username,
+            onValueChange = { username = it },
+            placeholder = { Text("eg.John", color = Color(0xFF8DA6FF)) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = appTextFieldColors(Color(0xFFE5EDFF))
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
             text = "Full Name",
             fontSize = 14.sp,
             fontWeight = SemiBold,
@@ -81,16 +100,16 @@ fun SignUpScreen(
         TextField(
             value = fullName,
             onValueChange = { fullName = it },
-            placeholder = {Text("eg.John",color=Color(0xFF8DA6FF))},
+            placeholder = { Text("eg.John", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
-        Spacer(modifier=Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text ="Password",
+            text = "Password",
             fontSize = 14.sp,
             fontWeight = SemiBold,
             color = Color.DarkGray
@@ -100,10 +119,10 @@ fun SignUpScreen(
 
         TextField(
             value = password,
-            onValueChange = { password = it},
+            onValueChange = { password = it },
             visualTransformation = PasswordVisualTransformation(), // Added this so it hides text!
-            placeholder = { Text("********", color=Color(0xFF8DA6FF))},
-            modifier= Modifier.fillMaxWidth(),
+            placeholder = { Text("********", color = Color(0xFF8DA6FF)) },
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
@@ -121,10 +140,10 @@ fun SignUpScreen(
 
         TextField(
             value = email,
-            onValueChange = { email = it},
-            placeholder = { Text("eg. example123@example.com", color = Color(0xFF8DA6FF))},
+            onValueChange = { email = it },
+            placeholder = { Text("eg. example123@example.com", color = Color(0xFF8DA6FF)) },
             shape = RoundedCornerShape(12.dp),
-            modifier= Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
@@ -142,7 +161,7 @@ fun SignUpScreen(
         TextField(
             value = mobileNumber,
             onValueChange = { mobileNumber = it },
-            placeholder = { Text("+60 12-3456789", color = Color(0xFF8DA6FF))},
+            placeholder = { Text("+60 12-3456789", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
@@ -160,8 +179,8 @@ fun SignUpScreen(
 
         TextField(
             value = dateOfBirth, // FIXED: Was 'mobileNumber' before!
-            onValueChange = { dateOfBirth = it},
-            placeholder = { Text(" DD/MM/YY ",color = Color(0xFF8DA6FF))},
+            onValueChange = { dateOfBirth = it },
+            placeholder = { Text(" DD/MM/YY ", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
@@ -210,17 +229,22 @@ fun SignUpScreen(
                 } else if (!email.contains("@")) {
                     errorMessage = "Please enter a valid email address"
                 } else if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters"} else {
+                    errorMessage = "Password must be at least 6 characters"
+                } else {
                     // Start a background thread
                     scope.launch {
                         // 1. Check if email exists
                         val existingUser = userDao.getUserByEmail(email)
+                        val existingUsername = userDao.getUserByUsername(username)
 
                         if (existingUser != null) {
                             errorMessage = "Email is already registered!"
+                        } else if (existingUsername != null) {
+                            errorMessage = "Username is already used by others!"
                         } else {
                             // 2. Create the User object — password stored as a hash, never plaintext
                             val newUser = com.example.assignment.database.User(
+                                username = username,
                                 fullName = fullName,
                                 email = email,
                                 password = com.example.assignment.database.hashPassword(password),
@@ -230,7 +254,7 @@ fun SignUpScreen(
                             // 3. Save to database and navigate!
                             userDao.insertUser(newUser)
                             errorMessage = ""
-                            onNavigateToHome()
+                            onNavigateToHome(username)
                         }
                     }
                 }
@@ -240,7 +264,7 @@ fun SignUpScreen(
                 .size(50.dp),
             shape = RoundedCornerShape(25.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E50FF))
-        ){
+        ) {
             Text(
                 text = "Sign Up",
                 fontSize = 16.sp,
@@ -249,7 +273,7 @@ fun SignUpScreen(
             )
         }
 
-        Spacer(modifier=Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
         Row(
             modifier = Modifier
@@ -266,7 +290,7 @@ fun SignUpScreen(
             )
 
             TextButton(
-                onClick = onNavigateToLogin ,
+                onClick = onNavigateToLogin,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text(

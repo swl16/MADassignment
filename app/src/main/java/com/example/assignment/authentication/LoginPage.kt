@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 fun LoginPage(
     userDao: com.example.assignment.database.UserDao,
     onNavigateToSignUp: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {} // <-- NEW!
+    onNavigateToHome: (String) -> Unit = {} // <-- CHANGED to accept String
 ){
     val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("")}
@@ -164,7 +164,7 @@ fun LoginPage(
                         if (user != null) {
                             // 2. Success! Go to home screen
                             errorMessage = ""
-                            onNavigateToHome()
+                            onNavigateToHome(user.username) // Pass the username
                         } else {
                             // 3. Failed! Wrong credentials
                             errorMessage = "Invalid email or password"

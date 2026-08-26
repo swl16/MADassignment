@@ -29,18 +29,12 @@ fun AppointmentHistoryScreen(
     onBack: () -> Unit,
     onAppointmentClick: (Appointment) -> Unit = {},
     onBookAppointment: () -> Unit = {},
-    userDao: UserDao? = null,
-    appointmentDao: AppointmentDao? = null
+    appointmentDao: AppointmentDao? = null,
+    username: String = "" // <-- NEW: Accept the username
 ) {
     // 1. Fetch data from DB
-    var userId by remember { mutableStateOf<Int?>(null) }
-    val appointments by produceState<List<Appointment>>(initialValue = emptyList(), userId) {
-        if (userId == null) {
-            userId = userDao?.getLatestUser()?.id
-        }
-        userId?.let { id ->
-            appointmentDao?.getAppointmentsForUser(id)?.collect { value = it }
-        }
+    val appointments by produceState<List<Appointment>>(initialValue = emptyList(), username) {
+        appointmentDao?.getAppointmentsForUser(username)?.collect { value = it }
     }
 
     val upcoming = appointments.filter { it.status == "Upcoming" }

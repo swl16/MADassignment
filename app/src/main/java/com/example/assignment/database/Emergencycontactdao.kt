@@ -22,6 +22,6 @@ interface EmergencyContactDao {
     suspend fun delete(contact: EmergencyContact)
 
     // 4. Used on screen open, to check whether this user already has a saved contact
-    @Query("SELECT * FROM emergency_contacts WHERE userId = :userId LIMIT 1")
-    suspend fun getForUser(userId: Int): EmergencyContact?
+    @Query("SELECT * FROM emergency_contacts WHERE username = :username LIMIT 1")
+    suspend fun getForUser(username: String): EmergencyContact?
 }

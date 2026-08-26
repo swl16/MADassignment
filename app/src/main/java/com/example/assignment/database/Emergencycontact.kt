@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class EmergencyContact(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val userId: Int,       // one contact per user for now (matches the current single-contact UI)
+    val username: String,  // links this contact to a User's username
     val fullName: String,
     val relationship: String,
     val mobileNumber: String

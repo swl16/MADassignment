@@ -43,31 +43,26 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun EmergencyContactScreen(
-    userDao: UserDao,
     emergencyContactDao: EmergencyContactDao,
+    username: String, // <-- NEW: Accept the username
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
 
-    var currentUserId by remember { mutableStateOf<Int?>(null) }
     var existingContact by remember { mutableStateOf<EmergencyContact?>(null) }
 
     var fullName by remember { mutableStateOf("") }
     var relationship by remember { mutableStateOf("") }
     var mobile by remember { mutableStateOf("") }
 
-    // 1. On open: find who's logged in, then load their saved contact (if any)
-    LaunchedEffect(Unit) {
-        val user = userDao.getLatestUser()
-        currentUserId = user?.id
-        if (user != null) {
-            val contact = emergencyContactDao.getForUser(user.id)
-            existingContact = contact
-            if (contact != null) {
-                fullName = contact.fullName
-                relationship = contact.relationship
-                mobile = contact.mobileNumber
-            }
+    // 1. On open: load their saved contact (if any)
+    LaunchedEffect(username) {
+        val contact = emergencyContactDao.getForUser(username)
+        existingContact = contact
+        if (contact != null) {
+            fullName = contact.fullName
+            relationship = contact.relationship
+            mobile = contact.mobileNumber
         }
     }
 
@@ -146,14 +141,13 @@ fun EmergencyContactScreen(
             // Save Button — actually inserts/updates now
             Button(
                 onClick = {
-                    val uid = currentUserId ?: return@Button
                     scope.launch {
                         val contactToSave = existingContact?.copy(
                             fullName = fullName,
                             relationship = relationship,
                             mobileNumber = mobile
                         ) ?: EmergencyContact(
-                            userId = uid,
+                            username = username,
                             fullName = fullName,
                             relationship = relationship,
                             mobileNumber = mobile

@@ -41,6 +41,7 @@ import com.example.assignment.database.UserDao
 @Composable
 fun ProfileScreen(
     userDao: UserDao,
+    username: String, // <-- NEW: Accept the username
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: () -> Unit = {},
     onLogOut: () -> Unit = {},
@@ -53,8 +54,8 @@ fun ProfileScreen(
     var currentUser by remember { mutableStateOf<User?>(null) }
 
     // 2. Fetch the user from the database as soon as the screen opens
-    LaunchedEffect(Unit) {
-        currentUser = userDao.getLatestUser()
+    LaunchedEffect(username) {
+        currentUser = userDao.getUserByUsername(username)
     }
 
     // 3. Fallback text while it loads
@@ -64,8 +65,8 @@ fun ProfileScreen(
     // Grab the first two letters of their name for the Avatar (e.g., "Wei Li" -> "WE")
     val initials = currentUser?.fullName?.take(2)?.uppercase() ?: "--"
 
-    // Dynamically format the Room ID into a Healthcare ID (1 -> HC-2026-0001)
-    val healthcareId = "HC-2026-${String.format("%04d", currentUser?.id ?: 0)}"
+    // Use username as the healthcare ID base since id is gone
+    val healthcareId = "HC-USR-${currentUser?.username?.take(4)?.uppercase() ?: "0000"}"
     // Add this to remember if the pop-up should be visible!
     var showLogoutDialog by remember { mutableStateOf(false) }
 

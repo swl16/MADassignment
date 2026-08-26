@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditProfileScreen(
     userDao: UserDao,
+    username: String, // <-- NEW: Accept the username
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -49,8 +50,8 @@ fun EditProfileScreen(
     var dob by remember { mutableStateOf("") }
 
     // Fetch the data as soon as the screen opens and populate the text fields!
-    LaunchedEffect(Unit) {
-        val user = userDao.getLatestUser()
+    LaunchedEffect(username) {
+        val user = userDao.getUserByUsername(username)
         if (user != null) {
             currentUser = user
             fullName = user.fullName
