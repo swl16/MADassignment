@@ -40,6 +40,7 @@ import androidx.navigation.NavController
 import com.example.assignment.database.UserDao
 import com.example.assignment.navigation.BottomNavBar
 
+
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -72,6 +73,7 @@ fun HomeScreen(
         Box(modifier = Modifier.padding(innerPadding)) {
             // 4. Pass the dynamic text down to the content!
             HomeContent(
+                navController = navController,
                 initials = initials,
                 firstName = firstName,
                 onNavigateToProfile = onNavigateToProfile,
@@ -83,6 +85,7 @@ fun HomeScreen(
 
 @Composable
 fun HomeContent(
+    navController: NavController,
     initials: String, // <-- Accept initials
     firstName: String, // <-- Accept first name
     onNavigateToProfile: () -> Unit = {},
@@ -106,7 +109,7 @@ fun HomeContent(
 
         NextAppointmentCard()
         Spacer(modifier = Modifier.height(10.dp))
-        QuickActionsGrid()
+        QuickActionsGrid(navController = navController)
         Spacer(modifier = Modifier.height(20.dp))
         TodayMedicationCard(medicineName = null)
     }
@@ -269,10 +272,11 @@ fun QuickActionCard(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
         // THE FIX: Chain .height() to the modifier to force it to be taller!
-        modifier = modifier.height(90.dp),
+        modifier = modifier.height(90.dp).clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -299,7 +303,7 @@ fun QuickActionCard(
 }
 
 @Composable
-fun QuickActionsGrid() {
+fun QuickActionsGrid(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -349,7 +353,8 @@ fun QuickActionsGrid() {
             QuickActionCard(
                 title = "Medical records",
                 subtitle = "View your files",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("records") }
             )
         }
     }
