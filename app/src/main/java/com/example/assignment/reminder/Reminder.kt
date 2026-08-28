@@ -86,7 +86,7 @@ fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel = 
                                 viewModel.saveReminder(reminder.copy(isActive = isChecked))
                             },
                             onClick = {
-                                navController.navigate("reminder_details/${reminder.documentId}")
+                                navController.navigate("reminder_details/${reminder.id}")
                             }
                         )
                     }

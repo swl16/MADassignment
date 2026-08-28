@@ -52,7 +52,7 @@ import com.example.assignment.database.ReminderViewModel
 fun ReminderDetailsScreen(
     navController: NavController,
     viewModel: ReminderViewModel,
-    documentId: String // Passed via navigation route
+    reminderId: String // Passed via navigation route
 ) {
     // Collect the list of reminders from the ViewModel
     val reminders by viewModel.reminders.collectAsState()
@@ -72,8 +72,8 @@ fun ReminderDetailsScreen(
         "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM")
 
     // When the screen loads, find the reminder and populate the fields
-    LaunchedEffect(documentId, reminders) {
-        val existingReminder = reminders.find { it.documentId == documentId }
+    LaunchedEffect(reminderId, reminders) {
+        val existingReminder = reminders.find { it.id == reminderId }
         if (existingReminder != null) {
             medicineName = existingReminder.medicineName
             dosage = existingReminder.dosage
@@ -159,7 +159,7 @@ fun ReminderDetailsScreen(
             onClick = {
                 // Update the existing reminder object
                 val updatedReminder = Reminder(
-                    documentId = documentId, // Crucial: Keep the same document ID to update, not create new
+                    id = reminderId, // Crucial: Keep the same document ID to update, not create new
                     medicineName = medicineName,
                     dosage = dosage,
                     frequency = frequency,
@@ -183,7 +183,7 @@ fun ReminderDetailsScreen(
         // Delete Button
         OutlinedButton(
             onClick = {
-                viewModel.deleteReminder(documentId)
+                viewModel.deleteReminder(reminderId)
                 navController.popBackStack()
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
