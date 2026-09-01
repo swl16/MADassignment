@@ -40,7 +40,8 @@ import com.example.assignment.profile.ProfileScreen
 import com.example.assignment.reminder.AddReminderScreen
 import com.example.assignment.reminder.ReminderDetailsScreen
 import com.example.assignment.reminder.ReminderScreen
-import com.example.assignment.viewmodel.UserViewModel // NEW IMPORT
+import com.example.assignment.viewmodel.EmergencyContactViewModel // NEW IMPORT
+import com.example.assignment.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -68,6 +69,16 @@ fun AppNavigation() {
         }
     )
 
+    // 3. Safely create the EmergencyContactViewModel passing the DAO
+    val emergencyContactViewModel: EmergencyContactViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return EmergencyContactViewModel(emergencyContactDao) as T
+            }
+        }
+    )
+
     val appointments = remember { mutableStateListOf<Appointment>() }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
     var activeUsername by remember { mutableStateOf("") }
@@ -84,7 +95,7 @@ fun AppNavigation() {
 
         composable("login") {
             LoginPage(
-                viewModel = userViewModel, // CHANGED
+                viewModel = userViewModel,
                 onNavigateToSignUp = { navController.navigate("signup") },
                 onNavigateToHome = { username ->
                     activeUsername = username
@@ -97,7 +108,7 @@ fun AppNavigation() {
 
         composable("signup") {
             SignUpScreen(
-                viewModel = userViewModel, // CHANGED
+                viewModel = userViewModel,
                 onNavigateToLogin = { navController.navigate("login") },
                 onNavigateToHome = { username ->
                     activeUsername = username
@@ -111,7 +122,7 @@ fun AppNavigation() {
         composable("home") {
             HomeScreen(
                 navController = navController,
-                viewModel = userViewModel, // CHANGED
+                viewModel = userViewModel,
                 loggedInUsername = activeUsername,
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToNotifications = { navController.navigate("notifications") }
@@ -166,7 +177,7 @@ fun AppNavigation() {
 
         composable("profile") {
             ProfileScreen(
-                viewModel = userViewModel, // CHANGED
+                viewModel = userViewModel,
                 username = activeUsername,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { navController.navigate("edit_profile") },
@@ -184,7 +195,7 @@ fun AppNavigation() {
 
         composable("change_password") {
             com.example.assignment.authentication.SetPasswordScreen(
-                viewModel = userViewModel, // CHANGED
+                viewModel = userViewModel,
                 username = activeUsername,
                 onBackClick = { navController.popBackStack() },
                 onPasswordCreated = { navController.popBackStack() }
@@ -193,7 +204,7 @@ fun AppNavigation() {
 
         composable("edit_profile") {
             EditProfileScreen(
-                viewModel = userViewModel, // CHANGED
+                viewModel = userViewModel,
                 username = activeUsername,
                 onNavigateBack = { navController.popBackStack() }
             )
@@ -213,7 +224,7 @@ fun AppNavigation() {
 
         composable("emergency_contact") {
             com.example.assignment.profile.EmergencyContactScreen(
-                emergencyContactDao = emergencyContactDao,
+                viewModel = emergencyContactViewModel, // CHANGED
                 username = activeUsername,
                 onNavigateBack = { navController.popBackStack() }
             )
