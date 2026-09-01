@@ -100,6 +100,7 @@ fun AppNavigation(apiKey: String) {
             LoginPage(
                 viewModel = userViewModel,
                 onNavigateToSignUp = { navController.navigate("signup") },
+                onNavigateToForgotPassword = { navController.navigate("forgot_password") }, // NEW
                 onNavigateToHome = { username ->
                     activeUsername = username
                     navController.navigate("home") {
@@ -116,6 +117,33 @@ fun AppNavigation(apiKey: String) {
                 onNavigateToHome = { username ->
                     activeUsername = username
                     navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("forgot_password") {
+            com.example.assignment.authentication.ForgotPasswordScreen(
+                viewModel = userViewModel,
+                onBackClick = { navController.popBackStack() },
+                onUserVerified = { username ->
+                    navController.navigate("reset_password/$username")
+                }
+            )
+        }
+
+        composable(
+            route = "reset_password/{username}",
+            arguments = listOf(navArgument("username") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
+            com.example.assignment.authentication.SetPasswordScreen(
+                viewModel = userViewModel,
+                username = username,
+                onBackClick = { navController.popBackStack() },
+                onPasswordCreated = {
+                    navController.navigate("login") {
                         popUpTo("login") { inclusive = true }
                     }
                 }

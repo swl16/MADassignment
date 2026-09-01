@@ -51,14 +51,42 @@ class UserViewModel(private val userDao: UserDao) : ViewModel() {
     }
 
     // Handles LoginPage Logic
+// Handles LoginPage Logic with Cloud Fallback
     fun login(email: String, passwordHash: String, onSuccess: (String) -> Unit) {
         viewModelScope.launch {
-            val user = userDao.login(email, passwordHash)
-            if (user != null) {
+            // 1. Try to find the user in the local Room DB first
+            val localUser = userDao.login(email, passwordHash)
+
+            if (localUser != null) {
+                // Found locally!
                 _errorMessage.value = ""
-                onSuccess(user.username)
+                onSuccess(localUser.username)
             } else {
-                _errorMessage.value = "Invalid email or password"
+                // 2. Not found locally (app might have been reinstalled). Check Supabase!
+                try {
+                    val remoteUser = SupabaseService.client.from("users")
+                        .select {
+                            filter {
+                                eq("email", email)
+                                eq("password", passwordHash)
+                            }
+                        }.decodeSingleOrNull<User>()
+
+                    if (remoteUser != null) {
+                        // 3. Found in the cloud! Restore them to the local Room database
+                        userDao.insertUser(remoteUser)
+
+                        _errorMessage.value = ""
+                        onSuccess(remoteUser.username)
+                    } else {
+                        // Not in Room and not in Supabase
+                        _errorMessage.value = "Invalid email or password"
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    // Usually triggers if the user has no internet and Room is empty
+                    _errorMessage.value = "Invalid email or password (or no internet connection)"
+                }
             }
         }
     }
