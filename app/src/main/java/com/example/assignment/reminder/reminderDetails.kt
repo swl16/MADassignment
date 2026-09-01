@@ -66,6 +66,9 @@ fun ReminderDetailsScreen(
     var notificationEnabled by remember { mutableStateOf(true) }
     var isActive by remember { mutableStateOf(true) }
 
+    var nameError by remember { mutableStateOf(false) }
+    var timeError by remember { mutableStateOf(false) }
+
     val timeOptions = listOf("8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM",
         "11:00 AM","11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
         "3:00 PM","3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM","7:00 PM",
@@ -118,7 +121,15 @@ fun ReminderDetailsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        CustomTextField(label = "Medicine name", value = medicineName, onValueChange = { medicineName = it })
+        CustomTextField(
+            label = "Medicine name",
+            value = medicineName,
+            isError = nameError,
+            errorMessage = "Medicine name is required",
+            onValueChange = {
+                medicineName = it
+                nameError = false }
+        )
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             CustomTextField(label = "Dosage", value = dosage, onValueChange = { dosage = it }, modifier = Modifier.weight(1f))
@@ -129,7 +140,12 @@ fun ReminderDetailsScreen(
             label = "Reminder time",
             selectedValue = reminderTime,
             options = timeOptions,
-            onValueChange = { reminderTime = it }
+            isError = timeError,
+            errorMessage = "Please select a time",
+            onValueChange = {
+                reminderTime = it
+                timeError = false
+            }
         )
 
         CustomTextField(label = "Instructions", value = instructions, onValueChange = { instructions = it })
@@ -157,19 +173,26 @@ fun ReminderDetailsScreen(
         // Save Changes Button
         Button(
             onClick = {
+                val isNameValid = medicineName.isNotBlank()
+                val isTimeValid = reminderTime.isNotBlank()
+
+                nameError = !isNameValid
+                timeError = !isTimeValid
                 // Update the existing reminder object
-                val updatedReminder = Reminder(
-                    id = reminderId, // Crucial: Keep the same document ID to update, not create new
-                    medicineName = medicineName,
-                    dosage = dosage,
-                    frequency = frequency,
-                    time = reminderTime,
-                    instructions = instructions,
-                    isNotificationEnabled = notificationEnabled,
-                    isActive = isActive
-                )
-                viewModel.saveReminder(updatedReminder)
-                navController.popBackStack()
+                if(isNameValid && isTimeValid) {
+                    val updatedReminder = Reminder(
+                        id = reminderId, // Keep the same document ID to update, not create new
+                        medicineName = medicineName,
+                        dosage = dosage,
+                        frequency = frequency,
+                        time = reminderTime,
+                        instructions = instructions,
+                        isNotificationEnabled = notificationEnabled,
+                        isActive = isActive
+                    )
+                    viewModel.saveReminder(updatedReminder)
+                    navController.popBackStack()
+                }
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF246BFD)),

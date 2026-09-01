@@ -49,35 +49,50 @@ val OrangeWarning = Color(0xFFF9A826)
 val GreenSuccess = Color(0xFF27AE60)
 val RedDanger = Color(0xFFFF4B4B)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = ""
+    placeholder: String = "",
+    isError: Boolean = false,
+    errorMessage: String = ""
 ) {
     Column(modifier = modifier.padding(vertical = 8.dp)) {
         Text(
             text = label,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
-            color = TextDark
+            color = if (isError) RedDanger else TextDark
         )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = value,
             onValueChange = onValueChange,
             placeholder = { Text(placeholder, color = TextGray) },
+            isError = isError,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
+                errorContainerColor = Color(0xFFFFF0F0),
                 focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
+                unfocusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = RedDanger
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         )
+
+        if (isError) {
+            Text(
+                text = errorMessage,
+                color = RedDanger,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+            )
+        }
     }
 }
 
@@ -88,6 +103,8 @@ fun CustomDropdownField(
     selectedValue: String,
     options: List<String>,
     onValueChange: (String) -> Unit,
+    isError: Boolean = false,
+    errorMessage: String = "",
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -97,7 +114,7 @@ fun CustomDropdownField(
             text = label,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
-            color = TextDark
+            color = if (isError) RedDanger else TextDark
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -109,11 +126,14 @@ fun CustomDropdownField(
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 placeholder = { Text("Select Time", color = TextGray) },
+                isError = isError,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
+                    errorContainerColor = Color(0xFFFFF0F0),
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    errorIndicatorColor = RedDanger
                 ),
                 shape = RoundedCornerShape(12.dp),
                 // menuAnchor is required to position the dropdown menu correctly
@@ -139,6 +159,15 @@ fun CustomDropdownField(
                         }
                     )
                 }
+            }
+
+            if (isError) {
+                Text(
+                    text = errorMessage,
+                    color = RedDanger,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+                )
             }
         }
     }
@@ -170,8 +199,9 @@ fun TopBar(title: String, onBackClick: () -> Unit) {
 }
 
 @Composable
-fun AddReminderScreen(navController: NavController,
-                      viewModel: ReminderViewModel
+fun AddReminderScreen(
+    navController: NavController,
+    viewModel: ReminderViewModel
 ) {
     var medicineName by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
@@ -180,10 +210,44 @@ fun AddReminderScreen(navController: NavController,
     var instruction by remember { mutableStateOf("") }
     var notificationEnable by remember { mutableStateOf(true) }
 
-    val timeOptions = listOf("8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM",
-        "11:00 AM","11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
-        "3:00 PM","3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM","7:00 PM",
-        "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM")
+    var nameError by remember { mutableStateOf(false) }
+    var timeError by remember { mutableStateOf(false) }
+
+    val timeOptions = listOf(
+        "8:00 AM",
+        "8:30 AM",
+        "9:00 AM",
+        "9:30 AM",
+        "10:00 AM",
+        "10:30 AM",
+        "11:00 AM",
+        "11:30 AM",
+        "12:00 PM",
+        "12:30 PM",
+        "1:00 PM",
+        "1:30 PM",
+        "2:00 PM",
+        "2:30 PM",
+        "3:00 PM",
+        "3:30 PM",
+        "4:00 PM",
+        "4:30 PM",
+        "5:00 PM",
+        "5:30 PM",
+        "6:00 PM",
+        "6:30 PM",
+        "7:00 PM",
+        "7:30 PM",
+        "8:00 PM",
+        "8:30 PM",
+        "9:00 PM",
+        "9:30 PM",
+        "10:00 PM",
+        "10:30 PM",
+        "11:00 PM",
+        "11:30 PM",
+        "12:00 AM"
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -195,7 +259,11 @@ fun AddReminderScreen(navController: NavController,
 
         CustomTextField(
             value = medicineName,
-            onValueChange = { medicineName = it },
+            isError = nameError,
+            errorMessage = "Medicine name is required",
+            onValueChange = {
+                medicineName = it
+                nameError = false },
             label = "Medicine Name",
             placeholder = "e.g. Amoxicillin",
             modifier = Modifier.fillMaxWidth()
@@ -223,7 +291,13 @@ fun AddReminderScreen(navController: NavController,
             label = "Reminder Time",
             selectedValue = reminderTime,
             options = timeOptions,
-            onValueChange = { reminderTime = it })
+            isError = timeError,
+            errorMessage = "Please select a time",
+            onValueChange = {
+                reminderTime = it
+                timeError = false
+            }
+        )
 
         CustomTextField(
             value = instruction,
@@ -261,19 +335,26 @@ fun AddReminderScreen(navController: NavController,
 
         Button(
             onClick = {
-                val newReminder = Reminder(
-                    medicineName = medicineName,
-                    dosage = dosage,
-                    frequency = frequency,
-                    time = reminderTime,
-                    instructions = instruction,
-                    isNotificationEnabled = notificationEnable,
-                    isActive = true
-                )
-                // 2. Save to Firestore via ViewModel
-                viewModel.saveReminder(newReminder)
-                // 3. Navigate back to the list
-                navController.popBackStack()},
+                val isNameValid = medicineName.isNotBlank()
+                val isTimeValid = reminderTime.isNotBlank()
+
+                nameError = !isNameValid
+                timeError = !isTimeValid
+
+                if(isNameValid && isTimeValid) {
+                    val newReminder = Reminder(
+                        medicineName = medicineName.trim(),
+                        dosage = dosage.trim(),
+                        frequency = frequency.trim(),
+                        time = reminderTime,
+                        instructions = instruction.trim(),
+                        isNotificationEnabled = notificationEnable,
+                        isActive = true
+                    )
+                    viewModel.saveReminder(newReminder)
+                    navController.popBackStack()
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),

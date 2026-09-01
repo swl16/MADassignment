@@ -9,7 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class ReminderViewModel: ViewModel(){
-    private val supabase = SupabaseService.client
+    private val repository = ReminderRepository()
+    private val supabaseAuth = SupabaseService.client.auth
 
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
     val reminders: StateFlow<List<Reminder>> = _reminders
@@ -21,13 +22,9 @@ class ReminderViewModel: ViewModel(){
     fun fetchReminders() {
         viewModelScope.launch {
             try {
-                val username = supabase.auth.currentUserOrNull()?.id ?: return@launch
+                val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
 
-                val fetchedReminders = supabase.postgrest["reminders"]
-                    .select { filter { eq("username", username) } }
-                    .decodeList<Reminder>()
-
-                _reminders.value = fetchedReminders
+                _reminders.value = repository.getRemindersForUser(username)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -37,15 +34,13 @@ class ReminderViewModel: ViewModel(){
     fun saveReminder(reminder: Reminder) {
         viewModelScope.launch {
             try {
-                val username = supabase.auth.currentUserOrNull()?.id ?: return@launch
+                val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
                 val reminderToSave = reminder.copy(username = username)
 
                 if (reminderToSave.id == null) {
-                    supabase.postgrest["reminders"].insert(reminderToSave)
+                    repository.insertReminder(reminderToSave)
                 } else {
-                    supabase.postgrest["reminders"].update(reminderToSave) {
-                        filter { eq("id", reminderToSave.id) }
-                    }
+                    repository.updateReminder(reminderToSave)
                 }
                 fetchReminders() // Refresh list after mutation
             } catch (e: Exception) {
@@ -57,9 +52,7 @@ class ReminderViewModel: ViewModel(){
     fun deleteReminder(id: String) {
         viewModelScope.launch {
             try {
-                supabase.postgrest["reminders"].delete {
-                    filter { eq("id", id) }
-                }
+                repository.deleteReminder(id)
                 fetchReminders()
             } catch (e: Exception) {
                 e.printStackTrace()
