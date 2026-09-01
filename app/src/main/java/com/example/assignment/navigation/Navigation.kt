@@ -50,7 +50,7 @@ import java.time.format.DateTimeFormatter
 
 
 @Composable
-fun AppNavigation(apiKey: String) {
+fun AppNavigation() {
     val navController = rememberNavController()
 
     // 1. Get the Context and open the Database
@@ -161,7 +161,7 @@ fun AppNavigation(apiKey: String) {
         }
 
         composable("nearby"){
-            NearbyScreen(navController, apiKey = apiKey, onNavigateBack = { navController.popBackStack() })
+            NearbyScreen(navController, onNavigateBack = { navController.popBackStack() })
         }
 
         composable("reminders") {

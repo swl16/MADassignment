@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NearbyScreen(navController: NavController, apiKey: String,
+fun NearbyScreen(navController: NavController,
                  onNavigateBack: () -> Unit = {}) {
 
     val context = LocalContext.current
@@ -67,43 +67,53 @@ fun NearbyScreen(navController: NavController, apiKey: String,
             isLoading = true
             errorMessage = null
             try {
-                val req = NearbySearchRequest(
-                    locationRestriction = LocationRestriction(
-                        circle = CircleRestriction(center = CenterPoint(lat, lng), radius = 5000.0)
-                    )
-                )
-                val response = RetrofitClient.placesApiService.searchNearby(apiKey = apiKey, request = req)
-                val labels = listOf("A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
+                val osmQuery = """
+                    [out:json][timeout:25];
+                    (
+                      node["amenity"="hospital"](around:5000,$lat,$lng);
+                      node["amenity"="clinic"](around:5000,$lat,$lng);
+                      node["amenity"="doctors"](around:5000,$lat,$lng);
+                      node["amenity"="pharmacy"](around:5000,$lat,$lng);
+                    );
+                    out body;
+                """.trimIndent()
 
-                val mapped = response.places?.mapIndexed { index, place ->
-                    val pLat = place.location?.latitude ?: lat
-                    val pLng = place.location?.longitude ?: lng
+                val response = RetrofitClient.api.getNearbyFacilities(osmQuery)
+                val labels = listOf("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N")
 
-                    val distanceArr = FloatArray(1)
-                    Location.distanceBetween(lat, lng, pLat, pLng, distanceArr)
-                    val distanceText = String.format("%.1f km", distanceArr[0] / 1000f)
+                val mappedList = response.elements
+                    ?.filter { it.lat != null && it.lon != null && !it.tags?.name.isNullOrBlank() }
+                    ?.mapIndexed { index, item ->
+                        val placeLat = item.lat!!
+                        val placeLng = item.lon!!
 
-                    val status = when (place.currentOpeningHours?.openNow) {
-                        true -> "Open now"
-                        false -> "Closed"
-                        null -> "Hours unavailable"
-                    }
+                        // Calculate distance from user GPS
+                        val distArr = FloatArray(1)
+                        Location.distanceBetween(lat, lng, placeLat, placeLng, distArr)
+                        val distKm = String.format("%.1f km", distArr[0] / 1000f)
 
-                    Facility(
-                        id = place.id,
-                        label = labels.getOrElse(index) { "•" },
-                        name = place.displayName?.text ?: "Medical Facility",
-                        type = place.primaryTypeDisplayName?.text ?: "Clinic",
-                        distance = distanceText,
-                        openingHours = status,
-                        location = LatLng(pLat, pLng)
-                    )
-                } ?: emptyList()
+                        val categoryType = when (item.tags?.amenity) {
+                            "hospital" -> "Hospital"
+                            "clinic" -> "Clinic"
+                            "pharmacy" -> "Pharmacy"
+                            else -> "Medical Care"
+                        }
 
-                facilities = mapped
-                selectedFacility = mapped.firstOrNull()
+                        Facility(
+                            id = item.id.toString(),
+                            label = labels.getOrElse(index) { "•" },
+                            name = item.tags?.name ?: "Medical Center",
+                            type = categoryType,
+                            distance = distKm,
+                            openingHours = item.tags?.openingHours ?: "Open daily",
+                            location = LatLng(placeLat, placeLng)
+                        )
+                    } ?: emptyList()
+
+                facilities = mappedList
+                selectedFacility = mappedList.firstOrNull()
             } catch (e: Exception) {
-                errorMessage = "Failed to load facilities: ${e.localizedMessage}"
+                errorMessage = "Network error: ${e.localizedMessage}"
             } finally {
                 isLoading = false
             }
@@ -379,6 +389,6 @@ fun NearbyScreen(navController: NavController, apiKey: String,
 @Composable
 fun AppointmentDetailPreview() {
     // Provide an empty list or mock data for preview
-    NearbyScreen(navController = rememberNavController(), apiKey = "")
-    //AppointmentDetailScreen(navController = rememberNavController(),Appointment(1,"2001","Sarah Lim", "General", "10/10/2026","10:30","HealthCare Clinic","Upcoming","General reason"), sampleDoctors[1])
+    NearbyScreen(navController = rememberNavController())
+
 }

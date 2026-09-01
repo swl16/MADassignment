@@ -5,8 +5,10 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 data class Facility(
     val id: String,
@@ -65,14 +67,41 @@ interface PlacesApiService {
     ): PlacesResponse
 }
 
-object RetrofitClient {
-    private const val BASE_URL = "https://places.googleapis.com/"
+data class OverpassResponse(
+    @SerializedName("elements") val elements: List<OsmElement>?
+)
 
-    val placesApiService: PlacesApiService by lazy {
+data class OsmElement(
+    val id: Long,
+    val lat: Double?,
+    val lon: Double?,
+    val tags: OsmTags?
+)
+
+data class OsmTags(
+    val name: String?,
+    val amenity: String?,          // "hospital", "clinic", "pharmacy", "doctors"
+    @SerializedName("opening_hours") val openingHours: String?,
+    @SerializedName("addr:street") val street: String?
+)
+
+// --- Retrofit Interface ---
+interface OverpassApiService {
+    @GET("api/interpreter")
+    suspend fun getNearbyFacilities(
+        @Query("data") query: String
+    ): OverpassResponse
+}
+
+// --- Retrofit Singleton ---
+object RetrofitClient {
+    private const val BASE_URL = "https://overpass-api.de/"
+
+    val api: OverpassApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(PlacesApiService::class.java)
+            .create(OverpassApiService::class.java)
     }
 }
