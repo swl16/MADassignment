@@ -27,10 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.assignment.ui.components.PasswordTextField
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
 
@@ -38,6 +38,7 @@ import com.example.assignment.viewmodel.UserViewModel
 fun LoginPage(
     viewModel: UserViewModel, // CHANGED
     onNavigateToSignUp: () -> Unit = {},
+    onNavigateToForgotPassword: () -> Unit = {},
     onNavigateToHome: (String) -> Unit = {}
 ){
     var email by remember { mutableStateOf("")}
@@ -107,19 +108,17 @@ fun LoginPage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
+        PasswordTextField(
             value = password,
-            onValueChange = { password=it },
-            visualTransformation = PasswordVisualTransformation(),
+            onValueChange = { password = it },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(
-            onClick = { /* TODO */ },
+            onClick = { onNavigateToForgotPassword },
             modifier = Modifier.align(Alignment.End),
             contentPadding = PaddingValues(0.dp)
         ){

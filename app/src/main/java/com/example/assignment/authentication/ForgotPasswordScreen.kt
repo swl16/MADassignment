@@ -13,7 +13,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,21 +28,17 @@ import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.assignment.database.hashPassword
-import com.example.assignment.ui.components.PasswordTextField
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
-fun SetPasswordScreen(
-    viewModel: UserViewModel, // CHANGED: Replaced UserDao with ViewModel
-    username: String = "",
+fun ForgotPasswordScreen(
+    viewModel: UserViewModel,
     onBackClick: () -> Unit = {},
-    onPasswordCreated: () -> Unit = {}
+    onUserVerified: (username: String) -> Unit = {}
 ) {
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+    var identifier by remember { mutableStateOf("") }
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     Column(
         modifier = Modifier
@@ -49,7 +47,6 @@ fun SetPasswordScreen(
     ) {
         Spacer(modifier = Modifier.height(60.dp))
 
-        // THE HEADER (Back Arrow + Centered Title)
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
@@ -72,7 +69,7 @@ fun SetPasswordScreen(
             )
 
             Text(
-                text = "Set Password",
+                text = "Forgot Password",
                 fontSize = 22.sp,
                 fontWeight = SemiBold,
                 color = Color(0xFF1E50FF)
@@ -82,7 +79,7 @@ fun SetPasswordScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Create a secure new password for your HealthCare account.",
+            text = "Enter the email or username linked to your HealthCare account. We'll let you set a new password.",
             fontSize = 14.sp,
             color = Color.Gray,
             lineHeight = 20.sp
@@ -90,30 +87,20 @@ fun SetPasswordScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // MAIN PASSWORD FIELD
-        Text(text = "Password", fontSize = 14.sp, fontWeight = SemiBold, color = Color.DarkGray)
+        Text(text = "Email or Username", fontSize = 14.sp, fontWeight = SemiBold, color = Color.DarkGray)
         Spacer(modifier = Modifier.height(8.dp))
-        PasswordTextField(
-            value = password,
-            onValueChange = { password = it },
+
+        TextField(
+            value = identifier,
+            onValueChange = { identifier = it },
+            placeholder = { Text("example@example.com", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = "Confirm Password", fontSize = 14.sp, fontWeight = SemiBold, color = Color.DarkGray)
-        Spacer(modifier = Modifier.height(8.dp))
-        PasswordTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            modifier = Modifier.fillMaxWidth(),
-            colors = appTextFieldColors(Color(0xFFE5EDFF))
-        )
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // THE GHOST BOX (Error Message)
         if (errorMessage.isNotEmpty()) {
             Text(
                 text = errorMessage,
@@ -126,22 +113,11 @@ fun SetPasswordScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // SUBMIT BUTTON & LOGIC
         Button(
             onClick = {
-                if (password.isBlank() || confirmPassword.isBlank()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters"
-                } else if (password != confirmPassword) {
-                    errorMessage = "Passwords do not match"
-                } else {
-                    errorMessage = ""
-                    // CHANGED: Simply call the ViewModel and let it do the heavy lifting
-                    val hashed = hashPassword(password)
-                    viewModel.changeUserPassword(username, hashed) {
-                        onPasswordCreated()
-                    }
+                if (identifier.isBlank()) return@Button
+                viewModel.findUserForReset(identifier) { username ->
+                    onUserVerified(username)
                 }
             },
             modifier = Modifier
@@ -151,7 +127,7 @@ fun SetPasswordScreen(
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E50FF))
         ) {
             Text(
-                text = "Create New Password",
+                text = "Continue",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
