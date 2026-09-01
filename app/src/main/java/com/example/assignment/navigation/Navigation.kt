@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -38,10 +40,10 @@ import com.example.assignment.profile.ProfileScreen
 import com.example.assignment.reminder.AddReminderScreen
 import com.example.assignment.reminder.ReminderDetailsScreen
 import com.example.assignment.reminder.ReminderScreen
+import com.example.assignment.viewmodel.UserViewModel // NEW IMPORT
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
 
 @Composable
 fun AppNavigation() {
@@ -55,6 +57,16 @@ fun AppNavigation() {
     val emergencyContactDao = db.emergencyContactDao()
 
     val reminderViewModel: com.example.assignment.database.ReminderViewModel = viewModel()
+
+    // 2. Safely create the UserViewModel passing the DAO
+    val userViewModel: UserViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return UserViewModel(userDao) as T
+            }
+        }
+    )
 
     val appointments = remember { mutableStateListOf<Appointment>() }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
@@ -72,9 +84,9 @@ fun AppNavigation() {
 
         composable("login") {
             LoginPage(
-                userDao = userDao,
+                viewModel = userViewModel, // CHANGED
                 onNavigateToSignUp = { navController.navigate("signup") },
-                onNavigateToHome = { username -> // <-- Accept the username
+                onNavigateToHome = { username ->
                     activeUsername = username
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
@@ -85,9 +97,9 @@ fun AppNavigation() {
 
         composable("signup") {
             SignUpScreen(
-                userDao = userDao,
+                viewModel = userViewModel, // CHANGED
                 onNavigateToLogin = { navController.navigate("login") },
-                onNavigateToHome = { username -> // <-- Accept the username
+                onNavigateToHome = { username ->
                     activeUsername = username
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
@@ -99,8 +111,8 @@ fun AppNavigation() {
         composable("home") {
             HomeScreen(
                 navController = navController,
-                userDao = userDao,
-                loggedInUsername = activeUsername, // <-- Pass it down
+                viewModel = userViewModel, // CHANGED
+                loggedInUsername = activeUsername,
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToNotifications = { navController.navigate("notifications") }
             )
@@ -118,7 +130,6 @@ fun AppNavigation() {
             route = "reminder_details/{documentId}",
             arguments = listOf(navArgument("documentId") { type = NavType.StringType })
         ) { backStackEntry ->
-            // Extract the documentId from the route and pass it to the Details screen
             val docId = backStackEntry.arguments?.getString("documentId") ?: ""
             ReminderDetailsScreen(navController, reminderViewModel, docId)
         }
@@ -130,8 +141,6 @@ fun AppNavigation() {
                     navController.navigate("doctor_profile/$doctorIndex")
                 },
                 onBookNow = { doctor ->
-                    // TODO: once Appointment entity/DAO exists, insert a row here instead
-                    // For now this can just navigate straight to the profile screen too:
                     val index = sampleDoctors.indexOf(doctor)
                     navController.navigate("doctor_profile/$index")
                 }
@@ -157,8 +166,8 @@ fun AppNavigation() {
 
         composable("profile") {
             ProfileScreen(
-                userDao = userDao,
-                username = activeUsername, // <-- Pass it here
+                viewModel = userViewModel, // CHANGED
+                username = activeUsername,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { navController.navigate("edit_profile") },
                 onNavigateToSettings = { navController.navigate("notification_settings") },
@@ -175,8 +184,8 @@ fun AppNavigation() {
 
         composable("change_password") {
             com.example.assignment.authentication.SetPasswordScreen(
-                userDao = userDao,
-                username = activeUsername, // <-- Pass it here
+                viewModel = userViewModel, // CHANGED
+                username = activeUsername,
                 onBackClick = { navController.popBackStack() },
                 onPasswordCreated = { navController.popBackStack() }
             )
@@ -184,8 +193,8 @@ fun AppNavigation() {
 
         composable("edit_profile") {
             EditProfileScreen(
-                userDao = userDao,
-                username = activeUsername, // <-- Pass it here
+                viewModel = userViewModel, // CHANGED
+                username = activeUsername,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -205,7 +214,7 @@ fun AppNavigation() {
         composable("emergency_contact") {
             com.example.assignment.profile.EmergencyContactScreen(
                 emergencyContactDao = emergencyContactDao,
-                username = activeUsername, // <-- Pass it here
+                username = activeUsername,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -219,7 +228,7 @@ fun AppNavigation() {
                     navController.navigate("appointment_detail")
                 },
                 appointmentDao = appointmentDao,
-                username = activeUsername // <-- Pass it here
+                username = activeUsername
             )
         }
 
@@ -269,7 +278,6 @@ fun AppNavigation() {
                     onConfirm = { newDate, newTime ->
                         val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
 
-                        // 1. Update in-memory list if still used
                         val index = appointments.indexOfFirst { it.id == appointment.id }
                         if (index != -1) {
                             appointments[index] = appointment.copy(
