@@ -13,13 +13,15 @@ import com.example.assignment.ui.theme.AssignmentTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val googleMapsApiKey = "YOUR_GOOGLE_MAPS_API_KEY"
+
         setContent {
             AssignmentTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(apiKey = googleMapsApiKey)
                 }
             }
         }

@@ -270,6 +270,7 @@ fun QuickActionCard(
     onClick: () -> Unit = {}
 ) {
     Card(
+        onClick = onClick,
         // THE FIX: Chain .height() to the modifier to force it to be taller!
         modifier = modifier.height(90.dp).clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -322,13 +323,15 @@ fun QuickActionsGrid(navController: NavController) {
             QuickActionCard(
                 title = "Book appointment",
                 subtitle = "Find a doctor",
-                modifier = Modifier.weight(1f), // Takes 50% of the screen
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("appointments")}// Takes 50% of the screen
             )
 
             QuickActionCard(
                 title = "Medication",
                 subtitle = "Set reminder",
-                modifier = Modifier.weight(1f) // Takes 50% of the screen
+                modifier = Modifier.weight(1f),
+                onClick = {navController.navigate("addReminder")}// Takes 50% of the screen
             )
         }
 
@@ -342,7 +345,8 @@ fun QuickActionsGrid(navController: NavController) {
             QuickActionCard(
                 title = "Find nearby",
                 subtitle = "Clinic or hospital",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = {navController.navigate("nearby")}
             )
 
             QuickActionCard(

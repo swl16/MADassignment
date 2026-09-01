@@ -1,5 +1,6 @@
 package com.example.assignment.navigation
 
+import android.R.attr.apiKey
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -35,6 +36,7 @@ import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
 import com.example.assignment.database.Appointment
 import com.example.assignment.homescreen.HomeScreen
+import com.example.assignment.nearby.NearbyScreen
 import com.example.assignment.profile.EditProfileScreen
 import com.example.assignment.profile.ProfileScreen
 import com.example.assignment.reminder.AddReminderScreen
@@ -46,8 +48,9 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+
 @Composable
-fun AppNavigation() {
+fun AppNavigation(apiKey: String) {
     val navController = rememberNavController()
 
     // 1. Get the Context and open the Database
@@ -127,6 +130,10 @@ fun AppNavigation() {
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToNotifications = { navController.navigate("notifications") }
             )
+        }
+
+        composable("nearby"){
+            NearbyScreen(navController, apiKey = apiKey, onNavigateBack = { navController.popBackStack() })
         }
 
         composable("reminders") {
