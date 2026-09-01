@@ -24,10 +24,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState // NEW IMPORT
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,31 +35,28 @@ import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.assignment.database.UserDao
 import com.example.assignment.navigation.BottomNavBar
-
+import com.example.assignment.viewmodel.UserViewModel // NEW IMPORT
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    userDao: UserDao, // <-- 1. Accept the database
-    loggedInUsername: String, // <-- NEW: Accept the username
+    viewModel: UserViewModel, // CHANGED: Now takes ViewModel
+    loggedInUsername: String,
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {}
 ) {
-    // 2. Create state variables to hold the dynamic data
-    var initials by remember { mutableStateOf("--") }
-    var firstName by remember { mutableStateOf("User") }
+    // 1. Observe the user state directly from the ViewModel
+    val currentUser by viewModel.currentUser.collectAsState()
 
-    // 3. Fetch the data right when the screen opens
+    // 2. Fetch the data right when the screen opens
     LaunchedEffect(loggedInUsername) {
-        val user = userDao.getUserByUsername(loggedInUsername)
-        if (user != null) {
-            initials = user.fullName.take(2).uppercase()
-            // Split the full name by spaces and just take their first name for a friendly greeting
-            firstName = user.fullName.split(" ").firstOrNull() ?: "User"
-        }
+        viewModel.loadUserProfile(loggedInUsername)
     }
+
+    // 3. Derive UI values directly from the state (defaults to fallback text if loading)
+    val initials = currentUser?.fullName?.take(2)?.uppercase() ?: "--"
+    val firstName = currentUser?.fullName?.split(" ")?.firstOrNull() ?: "User"
 
     Scaffold(
         containerColor = Color(0xFFF8FAFF),
@@ -71,7 +66,7 @@ fun HomeScreen(
     ) { innerPadding: PaddingValues ->
 
         Box(modifier = Modifier.padding(innerPadding)) {
-            // 4. Pass the dynamic text down to the content!
+            // 4. Pass the dynamic text down to the content
             HomeContent(
                 navController = navController,
                 initials = initials,

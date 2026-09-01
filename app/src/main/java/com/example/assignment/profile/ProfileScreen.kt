@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,12 +36,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.assignment.database.User
-import com.example.assignment.database.UserDao
+import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
 fun ProfileScreen(
-    userDao: UserDao,
+    viewModel: UserViewModel,
     username: String,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: () -> Unit = {},
@@ -50,12 +50,15 @@ fun ProfileScreen(
     onNavigateToAppointmentHistory: () -> Unit = {},
     onNavigateToChangePassword: () -> Unit = {},
 ) {
-    // 1. Create a blank state variable to hold the user data
-    var currentUser by remember { mutableStateOf<User?>(null) }
+    // 1. Observe the user state directly from the ViewModel
+    val currentUser by viewModel.currentUser.collectAsState()
 
-    // 2. Fetch the user from the database as soon as the screen opens
+    // Add this to remember if the pop-up should be visible!
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // 2. Tell the ViewModel to fetch data (Room + Supabase) when screen opens
     LaunchedEffect(username) {
-        currentUser = userDao.getUserByUsername(username)
+        viewModel.loadUserProfile(username)
     }
 
     // 3. Fallback text while it loads
@@ -67,8 +70,6 @@ fun ProfileScreen(
 
     // Use username as the healthcare ID base since id is gone
     val healthcareId = "${currentUser?.username?.take(4)?.uppercase() ?: "0000"}"
-    // Add this to remember if the pop-up should be visible!
-    var showLogoutDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -308,4 +309,3 @@ fun SettingsRowItem(
         }
     }
 }
-

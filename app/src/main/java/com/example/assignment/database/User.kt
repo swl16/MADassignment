@@ -2,7 +2,9 @@ package com.example.assignment.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable // NEW
 @Entity(tableName = "users")
 data class User(
     @PrimaryKey(autoGenerate = false)

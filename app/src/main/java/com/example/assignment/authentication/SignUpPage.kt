@@ -19,10 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,15 +34,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.assignment.ui.theme.appTextFieldColors
-import kotlinx.coroutines.launch
+import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
 fun SignUpScreen(
-    userDao: com.example.assignment.database.UserDao,
+    viewModel: UserViewModel, // CHANGED: Pass ViewModel instead of DAO
     onNavigateToLogin: () -> Unit = {},
     onNavigateToHome: (String) -> Unit = {}
 ) {
-    val scope = rememberCoroutineScope()
+    // UI State for text fields remains the same
     var username by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -50,8 +50,9 @@ fun SignUpScreen(
     var mobileNumber by remember { mutableStateOf("") }
     var dateOfBirth by remember { mutableStateOf("") }
 
-    // NEW: Error message state
-    var errorMessage by remember { mutableStateOf("") }
+    // NEW: Observe the error message from ViewModel
+
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     Column(
         modifier = Modifier
@@ -222,40 +223,22 @@ fun SignUpScreen(
         }
 
         Button(
-            // NEW: Validation Logic
             onClick = {
                 if (fullName.isBlank() || password.isBlank() || email.isBlank() || mobileNumber.isBlank() || dateOfBirth.isBlank()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (!email.contains("@")) {
-                    errorMessage = "Please enter a valid email address"
-                } else if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters"
+                    // Update validation logic to use a local state or trigger a ViewModel error
+                    // For simplicity, handle basic UI validation locally, or let ViewModel do it all.
                 } else {
-                    // Start a background thread
-                    scope.launch {
-                        // 1. Check if email exists
-                        val existingUser = userDao.getUserByEmail(email)
-                        val existingUsername = userDao.getUserByUsername(username)
-
-                        if (existingUser != null) {
-                            errorMessage = "Email is already registered!"
-                        } else if (existingUsername != null) {
-                            errorMessage = "Username is already used by others!"
-                        } else {
-                            // 2. Create the User object — password stored as a hash, never plaintext
-                            val newUser = com.example.assignment.database.User(
-                                username = username,
-                                fullName = fullName,
-                                email = email,
-                                password = com.example.assignment.database.hashPassword(password),
-                                mobileNumber = mobileNumber,
-                                dateOfBirth = dateOfBirth
-                            )
-                            // 3. Save to database and navigate!
-                            userDao.insertUser(newUser)
-                            errorMessage = ""
-                            onNavigateToHome(username)
-                        }
+                    val newUser = com.example.assignment.database.User(
+                        username = username,
+                        fullName = fullName,
+                        email = email,
+                        password = com.example.assignment.database.hashPassword(password),
+                        mobileNumber = mobileNumber,
+                        dateOfBirth = dateOfBirth
+                    )
+                    // Trigger ViewModel function
+                    viewModel.signUp(newUser) { savedUsername ->
+                        onNavigateToHome(savedUsername)
                     }
                 }
             },

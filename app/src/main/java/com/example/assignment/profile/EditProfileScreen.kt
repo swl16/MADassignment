@@ -18,10 +18,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,31 +29,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.assignment.database.User
-import com.example.assignment.database.UserDao
 import com.example.assignment.ui.theme.appTextFieldColors
-import kotlinx.coroutines.launch
+import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
 fun EditProfileScreen(
-    userDao: UserDao,
-    username: String, // <-- NEW: Accept the username
+    viewModel: UserViewModel, // CHANGED: Accept ViewModel instead of UserDao
+    username: String,
     onNavigateBack: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-    var currentUser by remember { mutableStateOf<User?>(null) }
+    // Observe the user data from ViewModel
+    val currentUser by viewModel.currentUser.collectAsState()
 
-    // State variables for the text fields
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var dob by remember { mutableStateOf("") }
 
-    // Fetch the data as soon as the screen opens and populate the text fields!
-    LaunchedEffect(username) {
-        val user = userDao.getUserByUsername(username)
-        if (user != null) {
-            currentUser = user
+    // Pre-fill fields when currentUser data arrives from the ViewModel
+    LaunchedEffect(currentUser) {
+        currentUser?.let { user ->
             fullName = user.fullName
             email = user.email
             phone = user.mobileNumber
@@ -61,14 +56,14 @@ fun EditProfileScreen(
         }
     }
 
-    val initials = fullName.take(2).uppercase()
+    // Default to "--" if name hasn't loaded yet
+    val initials = fullName.take(2).uppercase().ifEmpty { "--" }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8FAFF))
     ) {
-        // We reuse your StandardTopBar, but leave the actionText blank!
         StandardTopBar(
             title = "Edit Profile",
             actionText = "",
@@ -84,7 +79,6 @@ fun EditProfileScreen(
         ) {
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Avatar
             Surface(
                 shape = RoundedCornerShape(50),
                 color = Color(0xFFE5EDFF),
@@ -107,7 +101,6 @@ fun EditProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Custom Text Fields matching Figma
             ProfileInputField(label = "Full name", value = fullName, onValueChange = { fullName = it })
             ProfileInputField(label = "Email address", value = email, onValueChange = { email = it })
             ProfileInputField(label = "Phone number", value = phone, onValueChange = { phone = it })
@@ -115,21 +108,18 @@ fun EditProfileScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Save Changes Button
             Button(
                 onClick = {
-                    scope.launch {
-                        currentUser?.let { user ->
-                            // Create an updated user object keeping the same exact ID
-                            val updatedUser = user.copy(
-                                fullName = fullName,
-                                email = email,
-                                mobileNumber = phone,
-                                dateOfBirth = dob
-                            )
-                            userDao.updateUser(updatedUser)
-                            onNavigateBack() // Go back to profile after saving
-                        }
+                    currentUser?.let { user ->
+                        val updatedUser = user.copy(
+                            fullName = fullName,
+                            email = email,
+                            mobileNumber = phone,
+                            dateOfBirth = dob
+                        )
+                        // CHANGED: Use ViewModel to save to Room + Supabase
+                        viewModel.updateUserProfile(updatedUser)
+                        onNavigateBack()
                     }
                 },
                 modifier = Modifier
@@ -145,7 +135,6 @@ fun EditProfileScreen(
     }
 }
 
-// Reusable custom text field to perfectly match the white Figma cards!
 @Composable
 fun ProfileInputField(label: String, value: String, onValueChange: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {

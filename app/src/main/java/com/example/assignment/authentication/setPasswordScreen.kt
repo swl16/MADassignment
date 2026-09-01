@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,22 +26,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.assignment.database.UserDao
 import com.example.assignment.database.hashPassword
 import com.example.assignment.ui.theme.appTextFieldColors
-import kotlinx.coroutines.launch
+import com.example.assignment.viewmodel.UserViewModel // NEW
 
 @Composable
 fun SetPasswordScreen(
-    userDao: UserDao? = null, // null = design/preview mode, just calls onPasswordCreated without saving
-    username: String = "",    // <-- NEW: Accept the username
+    viewModel: UserViewModel, // CHANGED: Replaced UserDao with ViewModel
+    username: String = "",
     onBackClick: () -> Unit = {},
     onPasswordCreated: () -> Unit = {}
 ) {
-    val scope = rememberCoroutineScope()
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -54,12 +50,11 @@ fun SetPasswordScreen(
     ) {
         Spacer(modifier = Modifier.height(60.dp))
 
-// THE HEADER (Back Arrow + Centered Title)
+        // THE HEADER (Back Arrow + Centered Title)
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            // 1. Create a blank interaction source to swallow the ripple effect
             val interactionSource = remember { MutableInteractionSource() }
 
             Text(
@@ -69,7 +64,6 @@ fun SetPasswordScreen(
                 color = Color(0xFF1E50FF),
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    // 2. The magic fix: indication = null completely removes the grey box!
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,
@@ -98,12 +92,7 @@ fun SetPasswordScreen(
         Spacer(modifier = Modifier.height(40.dp))
 
         // MAIN PASSWORD FIELD
-        Text(
-            text = "Password",
-            fontSize = 14.sp,
-            fontWeight = SemiBold,
-            color = Color.DarkGray
-        )
+        Text(text = "Password", fontSize = 14.sp, fontWeight = SemiBold, color = Color.DarkGray)
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = password,
@@ -118,12 +107,7 @@ fun SetPasswordScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         // CONFIRM PASSWORD FIELD
-        Text(
-            text = "Confirm Password",
-            fontSize = 14.sp,
-            fontWeight = SemiBold,
-            color = Color.DarkGray
-        )
+        Text(text = "Confirm Password", fontSize = 14.sp, fontWeight = SemiBold, color = Color.DarkGray)
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = confirmPassword,
@@ -161,15 +145,9 @@ fun SetPasswordScreen(
                     errorMessage = "Passwords do not match"
                 } else {
                     errorMessage = ""
-                    if (userDao != null) {
-                        scope.launch {
-                            val currentUser = userDao.getUserByUsername(username)
-                            if (currentUser != null) {
-                                userDao.updateUser(currentUser.copy(password = hashPassword(password)))
-                            }
-                            onPasswordCreated()
-                        }
-                    } else {
+                    // CHANGED: Simply call the ViewModel and let it do the heavy lifting
+                    val hashed = hashPassword(password)
+                    viewModel.changeUserPassword(username, hashed) {
                         onPasswordCreated()
                     }
                 }
@@ -188,10 +166,4 @@ fun SetPasswordScreen(
             )
         }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun SetPasswordScreenPreview() {
-    SetPasswordScreen()
 }
