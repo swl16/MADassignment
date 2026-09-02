@@ -102,7 +102,12 @@ fun SetPasswordScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = "Confirm Password", fontSize = 14.sp, fontWeight = SemiBold, color = Color.DarkGray)
+        Text(
+            text = "Confirm Password",
+            fontSize = 14.sp,
+            fontWeight = SemiBold,
+            color = Color.DarkGray
+        )
         Spacer(modifier = Modifier.height(8.dp))
         PasswordTextField(
             value = confirmPassword,
@@ -125,19 +130,18 @@ fun SetPasswordScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
-
-        // SUBMIT BUTTON & LOGIC
         Button(
             onClick = {
-                if (password.isBlank() || confirmPassword.isBlank()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (password.length < 6) {
-                    errorMessage = "Password must be at least 6 characters"
+                val passwordError = validatePassword(password)
+
+                if (passwordError != null) {
+                    errorMessage = passwordError
+                } else if (confirmPassword.isBlank()) {
+                    errorMessage = "Please confirm your password"
                 } else if (password != confirmPassword) {
                     errorMessage = "Passwords do not match"
                 } else {
                     errorMessage = ""
-                    // CHANGED: Simply call the ViewModel and let it do the heavy lifting
                     val hashed = hashPassword(password)
                     viewModel.changeUserPassword(username, hashed) {
                         onPasswordCreated()

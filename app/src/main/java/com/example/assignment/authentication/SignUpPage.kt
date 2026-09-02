@@ -374,7 +374,7 @@ private fun validateSignUpForm(
     dateOfBirth: String,
     agreedToTerms: Boolean
 ): String? {
-
+    val passwordError = validatePassword(password)
     val dateValidationResult = if (dateOfBirth.isNotBlank()) validateDateLogic(dateOfBirth.trim()) else null
 
     return when {
@@ -390,12 +390,7 @@ private fun validateSignUpForm(
         !fullName.matches(Regex("^[a-zA-Z\\s'.-]+$")) -> "Name can only contain letters, spaces, hyphens, or apostrophes"
 
         // --- 3. Password Validation ---
-        password.isBlank() -> "Password is required"
-        password.length < 8 -> "Password must be at least 8 characters"
-        !password.any { it.isUpperCase() } -> "Password must contain at least one uppercase letter"
-        !password.any { it.isLowerCase() } -> "Password must contain at least one lowercase letter"
-        !password.any { it.isDigit() } -> "Password must contain at least one number"
-        !password.any { !it.isLetterOrDigit() } -> "Password must contain at least one special character"
+        passwordError != null -> passwordError
 
         // --- 4. Email Validation ---
         email.isBlank() -> "Email is required"
