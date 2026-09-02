@@ -59,7 +59,17 @@ fun AppNavigation() {
     val appointmentDao = db.appointmentDao()
     val emergencyContactDao = db.emergencyContactDao()
 
-    val reminderViewModel: com.example.assignment.database.ReminderViewModel = viewModel()
+    val reminderDao = db.reminderDao()
+    val reminderRepository = remember{ com.example.assignment.database.ReminderRepository(reminderDao)}
+
+    val reminderViewModel: com.example.assignment.database.ReminderViewModel = viewModel(
+        factory = object: ViewModelProvider.Factory{
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return com.example.assignment.database.ReminderViewModel(reminderRepository) as T
+            }
+        }
+    )
 
     // 2. Safely create the UserViewModel passing the DAO
     val userViewModel: UserViewModel = viewModel(
