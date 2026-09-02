@@ -24,10 +24,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState // NEW IMPORT
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,30 +35,28 @@ import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.assignment.database.UserDao
 import com.example.assignment.navigation.BottomNavBar
+import com.example.assignment.viewmodel.UserViewModel // NEW IMPORT
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    userDao: UserDao, // <-- 1. Accept the database
-    loggedInUsername: String, // <-- NEW: Accept the username
+    viewModel: UserViewModel, // CHANGED: Now takes ViewModel
+    loggedInUsername: String,
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {}
 ) {
-    // 2. Create state variables to hold the dynamic data
-    var initials by remember { mutableStateOf("--") }
-    var firstName by remember { mutableStateOf("User") }
+    // 1. Observe the user state directly from the ViewModel
+    val currentUser by viewModel.currentUser.collectAsState()
 
-    // 3. Fetch the data right when the screen opens
+    // 2. Fetch the data right when the screen opens
     LaunchedEffect(loggedInUsername) {
-        val user = userDao.getUserByUsername(loggedInUsername)
-        if (user != null) {
-            initials = user.fullName.take(2).uppercase()
-            // Split the full name by spaces and just take their first name for a friendly greeting
-            firstName = user.fullName.split(" ").firstOrNull() ?: "User"
-        }
+        viewModel.loadUserProfile(loggedInUsername)
     }
+
+    // 3. Derive UI values directly from the state (defaults to fallback text if loading)
+    val initials = currentUser?.fullName?.take(2)?.uppercase() ?: "--"
+    val firstName = currentUser?.fullName?.split(" ")?.firstOrNull() ?: "User"
 
     Scaffold(
         containerColor = Color(0xFFF8FAFF),
@@ -70,8 +66,9 @@ fun HomeScreen(
     ) { innerPadding: PaddingValues ->
 
         Box(modifier = Modifier.padding(innerPadding)) {
-            // 4. Pass the dynamic text down to the content!
+            // 4. Pass the dynamic text down to the content
             HomeContent(
+                navController = navController,
                 initials = initials,
                 firstName = firstName,
                 onNavigateToProfile = onNavigateToProfile,
@@ -83,6 +80,7 @@ fun HomeScreen(
 
 @Composable
 fun HomeContent(
+    navController: NavController,
     initials: String, // <-- Accept initials
     firstName: String, // <-- Accept first name
     onNavigateToProfile: () -> Unit = {},
@@ -106,7 +104,7 @@ fun HomeContent(
 
         NextAppointmentCard()
         Spacer(modifier = Modifier.height(10.dp))
-        QuickActionsGrid()
+        QuickActionsGrid(navController = navController)
         Spacer(modifier = Modifier.height(20.dp))
         TodayMedicationCard(medicineName = null)
     }
@@ -269,10 +267,12 @@ fun QuickActionCard(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
+        onClick = onClick,
         // THE FIX: Chain .height() to the modifier to force it to be taller!
-        modifier = modifier.height(90.dp),
+        modifier = modifier.height(90.dp).clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -299,7 +299,7 @@ fun QuickActionCard(
 }
 
 @Composable
-fun QuickActionsGrid() {
+fun QuickActionsGrid(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -323,13 +323,15 @@ fun QuickActionsGrid() {
             QuickActionCard(
                 title = "Book appointment",
                 subtitle = "Find a doctor",
-                modifier = Modifier.weight(1f), // Takes 50% of the screen
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("appointments")}// Takes 50% of the screen
             )
 
             QuickActionCard(
                 title = "Medication",
                 subtitle = "Set reminder",
-                modifier = Modifier.weight(1f) // Takes 50% of the screen
+                modifier = Modifier.weight(1f),
+                onClick = {navController.navigate("addReminder")}// Takes 50% of the screen
             )
         }
 
@@ -343,13 +345,15 @@ fun QuickActionsGrid() {
             QuickActionCard(
                 title = "Find nearby",
                 subtitle = "Clinic or hospital",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = {navController.navigate("nearby")}
             )
 
             QuickActionCard(
                 title = "Medical records",
                 subtitle = "View your files",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("records") }
             )
         }
     }

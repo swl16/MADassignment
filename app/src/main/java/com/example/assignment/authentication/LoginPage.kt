@@ -18,34 +18,32 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.assignment.ui.components.PasswordTextField
 import com.example.assignment.ui.theme.appTextFieldColors
-import kotlinx.coroutines.launch
+import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
 fun LoginPage(
-    userDao: com.example.assignment.database.UserDao,
+    viewModel: UserViewModel, // CHANGED
     onNavigateToSignUp: () -> Unit = {},
-    onNavigateToHome: (String) -> Unit = {} // <-- CHANGED to accept String
+    onNavigateToForgotPassword: () -> Unit = {},
+    onNavigateToHome: (String) -> Unit = {}
 ){
-    val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("")}
     var password by remember { mutableStateOf("")}
-
-    // NEW: State to hold our error message
-    var errorMessage by remember { mutableStateOf("") }
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     Column(
         modifier = Modifier
@@ -110,19 +108,17 @@ fun LoginPage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
+        PasswordTextField(
             value = password,
-            onValueChange = { password=it },
-            visualTransformation = PasswordVisualTransformation(),
+            onValueChange = { password = it },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(
-            onClick = { /* TODO */ },
+            onClick = { onNavigateToForgotPassword() },
             modifier = Modifier.align(Alignment.End),
             contentPadding = PaddingValues(0.dp)
         ){
@@ -150,26 +146,10 @@ fun LoginPage(
         }
 
         Button(
-            // NEW: Validation Logic!
             onClick = {
-                if (email.isBlank() || password.isBlank()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (!email.contains("@")) {
-                    errorMessage = "Please enter a valid email address"
-                } else {
-                    scope.launch {
-                        // 1. Ask the database if this email and hashed password match
-                        val user = userDao.login(email, com.example.assignment.database.hashPassword(password))
-
-                        if (user != null) {
-                            // 2. Success! Go to home screen
-                            errorMessage = ""
-                            onNavigateToHome(user.username) // Pass the username
-                        } else {
-                            // 3. Failed! Wrong credentials
-                            errorMessage = "Invalid email or password"
-                        }
-                    }
+                val hashed = com.example.assignment.database.hashPassword(password)
+                viewModel.login(email, hashed) { username ->
+                    onNavigateToHome(username)
                 }
             },
             modifier = Modifier

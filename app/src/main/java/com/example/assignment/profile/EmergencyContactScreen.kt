@@ -24,10 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,33 +36,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.assignment.database.EmergencyContact
-import com.example.assignment.database.EmergencyContactDao
-import com.example.assignment.database.UserDao
 import com.example.assignment.ui.theme.appTextFieldColors
-import kotlinx.coroutines.launch
+import com.example.assignment.viewmodel.EmergencyContactViewModel
 
 @Composable
 fun EmergencyContactScreen(
-    emergencyContactDao: EmergencyContactDao,
-    username: String, // <-- NEW: Accept the username
+    viewModel: EmergencyContactViewModel, // CHANGED: Injected ViewModel
+    username: String,
     onNavigateBack: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-
-    var existingContact by remember { mutableStateOf<EmergencyContact?>(null) }
+    val existingContact by viewModel.contact.collectAsState()
 
     var fullName by remember { mutableStateOf("") }
     var relationship by remember { mutableStateOf("") }
     var mobile by remember { mutableStateOf("") }
 
-    // 1. On open: load their saved contact (if any)
+    // Load data via ViewModel
     LaunchedEffect(username) {
-        val contact = emergencyContactDao.getForUser(username)
-        existingContact = contact
-        if (contact != null) {
-            fullName = contact.fullName
-            relationship = contact.relationship
-            mobile = contact.mobileNumber
+        viewModel.loadContact(username)
+    }
+
+    // Populate form fields when data loads/changes
+    LaunchedEffect(existingContact) {
+        existingContact?.let {
+            fullName = it.fullName
+            relationship = it.relationship
+            mobile = it.mobileNumber
         }
     }
 
@@ -74,8 +73,10 @@ fun EmergencyContactScreen(
             .background(Color(0xFFF8FAFF))
     ) {
         StandardTopBar(
-            title = "Emergency Contact", actionText = "",
-            onBackClick = onNavigateBack, onActionClick = {}
+            title = "Emergency Contact",
+            actionText = "",
+            onBackClick = onNavigateBack,
+            onActionClick = {}
         )
 
         Column(
@@ -84,10 +85,13 @@ fun EmergencyContactScreen(
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Text(text = "This person can be contacted during an emergency.", color = Color.Gray, fontSize = 14.sp)
+            Text(
+                text = "This person can be contacted during an emergency.",
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Display Card — only shows once a contact actually exists
             if (existingContact != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -105,16 +109,35 @@ fun EmergencyContactScreen(
                             modifier = Modifier.size(60.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(initials, color = Color(0xFF1E50FF), fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                Text(
+                                    text = initials,
+                                    color = Color(0xFF1E50FF),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                )
                             }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
-                            Text(text = fullName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1A1A1A))
+                            Text(
+                                text = fullName,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color(0xFF1A1A1A)
+                            )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "$relationship • Primary contact", fontSize = 12.sp, color = Color.Gray)
+                            Text(
+                                text = "$relationship • Primary contact",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = mobile, fontSize = 14.sp, color = Color(0xFF1E50FF), fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = mobile,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1E50FF),
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }
@@ -128,40 +151,41 @@ fun EmergencyContactScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            Text(text = "Edit contact", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1A1A1A))
+            Text(
+                text = "Edit contact",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color(0xFF1A1A1A)
+            )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Input Fields
             ContactInputField(label = "Full name", value = fullName) { fullName = it }
             ContactInputField(label = "Relationship", value = relationship) { relationship = it }
             ContactInputField(label = "Mobile number", value = mobile) { mobile = it }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Save Button — actually inserts/updates now
+            // Save Button
             Button(
                 onClick = {
-                    scope.launch {
-                        val contactToSave = existingContact?.copy(
-                            fullName = fullName,
-                            relationship = relationship,
-                            mobileNumber = mobile
-                        ) ?: EmergencyContact(
-                            username = username,
-                            fullName = fullName,
-                            relationship = relationship,
-                            mobileNumber = mobile
-                        )
+                    val contactToSave = existingContact?.copy(
+                        fullName = fullName,
+                        relationship = relationship,
+                        mobileNumber = mobile
+                    ) ?: EmergencyContact(
+                        username = username,
+                        fullName = fullName,
+                        relationship = relationship,
+                        mobileNumber = mobile
+                    )
 
-                        if (existingContact != null) {
-                            emergencyContactDao.update(contactToSave)
-                        } else {
-                            emergencyContactDao.insert(contactToSave)
-                        }
+                    viewModel.saveContact(contactToSave, isExisting = existingContact != null) {
                         onNavigateBack()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E50FF))
             ) {
@@ -170,18 +194,19 @@ fun EmergencyContactScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Delete Button — now actually deletes, only enabled if a contact exists
+            // Delete Button
             OutlinedButton(
                 onClick = {
                     existingContact?.let { contact ->
-                        scope.launch {
-                            emergencyContactDao.delete(contact)
+                        viewModel.deleteContact(contact) {
                             onNavigateBack()
                         }
                     }
                 },
                 enabled = existingContact != null,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red),
                 colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
@@ -197,7 +222,12 @@ fun EmergencyContactScreen(
 @Composable
 fun ContactInputField(label: String, value: String, onValueChange: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A1A)
+        )
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = value,
