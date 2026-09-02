@@ -161,14 +161,15 @@ fun CustomDropdownField(
                 }
             }
 
-            if (isError) {
-                Text(
-                    text = errorMessage,
-                    color = RedDanger,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(start = 8.dp, top = 4.dp)
-                )
-            }
+        }
+
+        if (isError) {
+            Text(
+                text = errorMessage,
+                color = RedDanger,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+            )
         }
     }
 }
