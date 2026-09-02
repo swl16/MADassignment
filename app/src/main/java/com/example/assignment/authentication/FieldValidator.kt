@@ -41,6 +41,15 @@ fun validateDateOfBirth(dateOfBirth: String): String? {
     return validateDateLogic(dateOfBirth.trim())
 }
 
+fun validateRelationship(relationship: String): String? {
+    return when {
+        relationship.isBlank() -> "Relationship is required"
+        relationship.trim().length < 2 -> "Relationship is too short"
+        !relationship.matches(Regex("^[a-zA-Z\\s'.-]+$")) -> "Relationship can only contain letters"
+        else -> null
+    }
+}
+
 /** Checks the date is real and not in the future / absurdly old. */
 private fun validateDateLogic(dateOfBirth: String): String? {
     return try {

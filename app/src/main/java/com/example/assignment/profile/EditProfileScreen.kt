@@ -25,11 +25,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.assignment.authentication.formatMalaysianMobile
 import com.example.assignment.authentication.validateDateOfBirth
 import com.example.assignment.authentication.validateEmail
 import com.example.assignment.authentication.validateFullName
@@ -104,7 +104,7 @@ fun EditProfileScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
                     value = phoneField,
-                    onValueChange = { input -> phoneField = formatMalaysianMobileField(input) },
+                    onValueChange = { input -> phoneField = formatMalaysianMobile(input) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = appTextFieldColors(Color.White),
                     shape = RoundedCornerShape(12.dp),
@@ -179,34 +179,4 @@ fun ProfileInputField(label: String, value: String, onValueChange: (String) -> U
             shape = RoundedCornerShape(12.dp)
         )
     }
-}
-
-/**
- * Cursor-safe Malaysian mobile formatter for TextFieldValue —
- * same logic as SignUpScreen's formatter, reused here for edit profile.
- */
-private fun formatMalaysianMobileField(input: TextFieldValue): TextFieldValue {
-    val originalCursor = input.selection.start
-    val rawDigitsBeforeCursor = input.text.take(originalCursor).count { it.isDigit() }
-
-    val digits = input.text.filter { it.isDigit() }
-    val maxLength = if (digits.startsWith("011")) 11 else 10
-    val capped = digits.take(maxLength)
-
-    val formatted = if (capped.length <= 3) capped else "${capped.substring(0, 3)}-${capped.substring(3)}"
-
-    var digitsSeen = 0
-    var newCursor = formatted.length
-    for (i in formatted.indices) {
-        if (formatted[i].isDigit()) {
-            digitsSeen++
-            if (digitsSeen == rawDigitsBeforeCursor) {
-                newCursor = i + 1
-                break
-            }
-        }
-    }
-    if (rawDigitsBeforeCursor == 0) newCursor = 0
-
-    return TextFieldValue(text = formatted, selection = TextRange(newCursor))
 }

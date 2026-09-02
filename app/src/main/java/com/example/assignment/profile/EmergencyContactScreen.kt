@@ -32,16 +32,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.assignment.authentication.formatMalaysianMobile
+import com.example.assignment.authentication.validateFullName
+import com.example.assignment.authentication.validateMalaysianMobile
+import com.example.assignment.authentication.validateRelationship
 import com.example.assignment.database.EmergencyContact
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.EmergencyContactViewModel
 
 @Composable
 fun EmergencyContactScreen(
-    viewModel: EmergencyContactViewModel, // CHANGED: Injected ViewModel
+    viewModel: EmergencyContactViewModel,
     username: String,
     onNavigateBack: () -> Unit
 ) {
@@ -49,19 +55,18 @@ fun EmergencyContactScreen(
 
     var fullName by remember { mutableStateOf("") }
     var relationship by remember { mutableStateOf("") }
-    var mobile by remember { mutableStateOf("") }
+    var mobileField by remember { mutableStateOf(TextFieldValue("")) } // CHANGED: cursor-safe
+    var errorMessage by remember { mutableStateOf("") } // NEW
 
-    // Load data via ViewModel
     LaunchedEffect(username) {
         viewModel.loadContact(username)
     }
 
-    // Populate form fields when data loads/changes
     LaunchedEffect(existingContact) {
         existingContact?.let {
             fullName = it.fullName
             relationship = it.relationship
-            mobile = it.mobileNumber
+            mobileField = TextFieldValue(it.mobileNumber) // CHANGED
         }
     }
 
@@ -133,7 +138,7 @@ fun EmergencyContactScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = mobile,
+                                text = mobileField.text,
                                 fontSize = 14.sp,
                                 color = Color(0xFF1E50FF),
                                 fontWeight = FontWeight.SemiBold
@@ -161,26 +166,68 @@ fun EmergencyContactScreen(
 
             ContactInputField(label = "Full name", value = fullName) { fullName = it }
             ContactInputField(label = "Relationship", value = relationship) { relationship = it }
-            ContactInputField(label = "Mobile number", value = mobile) { mobile = it }
+
+            // CHANGED: Mobile number now uses cursor-safe Malaysian formatting
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Text(
+                    text = "Mobile number",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A1A1A)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = mobileField,
+                    onValueChange = { input -> mobileField = formatMalaysianMobile(input) },
+                    placeholder = { androidx.compose.material3.Text("012-3456789", color = Color(0xFF8DA6FF)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appTextFieldColors(Color.White),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
+                    )
+                )
+            }
+
+            // NEW: inline error message
+            if (errorMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // Save Button
             Button(
                 onClick = {
-                    val contactToSave = existingContact?.copy(
-                        fullName = fullName,
-                        relationship = relationship,
-                        mobileNumber = mobile
-                    ) ?: EmergencyContact(
-                        username = username,
-                        fullName = fullName,
-                        relationship = relationship,
-                        mobileNumber = mobile
-                    )
+                    val error = validateFullName(fullName)
+                        ?: validateRelationship(relationship)
+                        ?: validateMalaysianMobile(mobileField.text)
 
-                    viewModel.saveContact(contactToSave, isExisting = existingContact != null) {
-                        onNavigateBack()
+                    if (error != null) {
+                        errorMessage = error
+                    } else {
+                        errorMessage = ""
+                        val contactToSave = existingContact?.copy(
+                            fullName = fullName.trim(),
+                            relationship = relationship.trim(),
+                            mobileNumber = mobileField.text.trim()
+                        ) ?: EmergencyContact(
+                            username = username,
+                            fullName = fullName.trim(),
+                            relationship = relationship.trim(),
+                            mobileNumber = mobileField.text.trim()
+                        )
+
+                        viewModel.saveContact(contactToSave, isExisting = existingContact != null) {
+                            onNavigateBack()
+                        }
                     }
                 },
                 modifier = Modifier
@@ -237,4 +284,34 @@ fun ContactInputField(label: String, value: String, onValueChange: (String) -> U
             shape = RoundedCornerShape(12.dp)
         )
     }
+}
+
+/**
+ * Cursor-safe Malaysian mobile formatter for TextFieldValue —
+ * same logic reused from SignUpScreen / EditProfileScreen.
+ */
+private fun formatMalaysianMobileContact(input: TextFieldValue): TextFieldValue {
+    val originalCursor = input.selection.start
+    val rawDigitsBeforeCursor = input.text.take(originalCursor).count { it.isDigit() }
+
+    val digits = input.text.filter { it.isDigit() }
+    val maxLength = if (digits.startsWith("011")) 11 else 10
+    val capped = digits.take(maxLength)
+
+    val formatted = if (capped.length <= 3) capped else "${capped.substring(0, 3)}-${capped.substring(3)}"
+
+    var digitsSeen = 0
+    var newCursor = formatted.length
+    for (i in formatted.indices) {
+        if (formatted[i].isDigit()) {
+            digitsSeen++
+            if (digitsSeen == rawDigitsBeforeCursor) {
+                newCursor = i + 1
+                break
+            }
+        }
+    }
+    if (rawDigitsBeforeCursor == 0) newCursor = 0
+
+    return TextFieldValue(text = formatted, selection = TextRange(newCursor))
 }

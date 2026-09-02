@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.text.input.TextFieldValue
@@ -62,6 +62,10 @@ fun SignUpScreen(
     var activeDialog by remember { mutableStateOf<LegalDialog?>(null) }
     val viewModelError by viewModel.errorMessage.collectAsState()
     val displayedError = if (validationError.isNotEmpty()) validationError else viewModelError
+
+    LaunchedEffect(Unit) {
+        viewModel.clearError()
+    }
 
     Column(
         modifier = Modifier
@@ -388,44 +392,4 @@ private fun validateSignUpForm(
 
         else -> null
     }
-}
-
-/**
- * Formats raw digit input into Malaysian mobile format.
- * Most prefixes: 01X-XXXXXXX (10 digits total, e.g. 012-3456789)
- * 011 prefix:    011-XXXXXXXX (11 digits total, e.g. 011-12345678)
- */
-private fun formatMalaysianMobile(input: TextFieldValue): TextFieldValue {
-    val originalCursor = input.selection.start
-    val rawDigitsBeforeCursor = input.text.take(originalCursor).count { it.isDigit() }
-
-    val digits = input.text.filter { it.isDigit() }
-    val maxLength = if (digits.startsWith("011")) 11 else 10
-    val capped = digits.take(maxLength)
-
-    val formatted = if (capped.length <= 3) {
-        capped
-    } else {
-        "${capped.substring(0, 3)}-${capped.substring(3)}"
-    }
-
-    // Walk forward through the formatted string until we've passed the same
-    // number of digits that were before the cursor originally
-    var digitsSeen = 0
-    var newCursor = formatted.length
-    for (i in formatted.indices) {
-        if (formatted[i].isDigit()) {
-            digitsSeen++
-            if (digitsSeen == rawDigitsBeforeCursor) {
-                newCursor = i + 1
-                break
-            }
-        }
-    }
-    if (rawDigitsBeforeCursor == 0) newCursor = 0
-
-    return TextFieldValue(
-        text = formatted,
-        selection = TextRange(newCursor)
-    )
 }
