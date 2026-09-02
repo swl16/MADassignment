@@ -40,9 +40,9 @@ fun LoginPage(
     onNavigateToSignUp: () -> Unit = {},
     onNavigateToForgotPassword: () -> Unit = {},
     onNavigateToHome: (String) -> Unit = {}
-){
-    var email by remember { mutableStateOf("")}
-    var password by remember { mutableStateOf("")}
+) {
+    var loginInput by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     val errorMessage by viewModel.errorMessage.collectAsState()
 
     Column(
@@ -50,7 +50,7 @@ fun LoginPage(
             .fillMaxSize()
             .padding(horizontal = 24.dp)
             .verticalScroll(rememberScrollState())
-    ){
+    ) {
         Spacer(modifier = Modifier.height(60.dp))
 
         Text(
@@ -80,7 +80,7 @@ fun LoginPage(
         Spacer(modifier = Modifier.height(40.dp))
 
         Text(
-            text = "Email or Mobile Number",
+            text = "Email / Username",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = Color.DarkGray
@@ -89,9 +89,9 @@ fun LoginPage(
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = email,
-            onValueChange = { email = it },
-            placeholder = { Text("example@example.com", color=Color(0xFF8DA6FF)) },
+            value = loginInput ,
+            onValueChange = { loginInput = it },
+            placeholder = { Text("example@example.com", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = appTextFieldColors(Color(0xFFE5EDFF))
@@ -121,7 +121,7 @@ fun LoginPage(
             onClick = { onNavigateToForgotPassword() },
             modifier = Modifier.align(Alignment.End),
             contentPadding = PaddingValues(0.dp)
-        ){
+        ) {
             Text(
                 text = "Forgot Password?",
                 fontSize = 12.sp,
@@ -148,8 +148,8 @@ fun LoginPage(
         Button(
             onClick = {
                 val hashed = com.example.assignment.database.hashPassword(password)
-                viewModel.login(email, hashed) { username ->
-                    onNavigateToHome(username)
+                viewModel.login(loginInput, hashed) { loggedInUsername ->
+                    onNavigateToHome(loggedInUsername)
                 }
             },
             modifier = Modifier
@@ -157,7 +157,7 @@ fun LoginPage(
                 .height(50.dp),
             shape = RoundedCornerShape(25.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E50FF))
-        ){
+        ) {
             Text(
                 text = "Log In",
                 fontSize = 16.sp,
@@ -174,7 +174,7 @@ fun LoginPage(
                 .padding(bottom = 32.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
-        ){
+        ) {
             Text(
                 text = "Don't have an account? ",
                 fontSize = 12.sp,
@@ -184,7 +184,7 @@ fun LoginPage(
             TextButton(
                 onClick = onNavigateToSignUp,
                 contentPadding = PaddingValues(0.dp)
-            ){
+            ) {
                 Text(
                     text = "Sign Up",
                     fontSize = 12.sp,
