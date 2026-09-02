@@ -34,8 +34,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -57,7 +59,7 @@ fun SignUpScreen(
     var fullName by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var mobileNumber by remember { mutableStateOf("") }
+    var mobileNumberField by remember { mutableStateOf(TextFieldValue("")) }
     var dateOfBirth by remember { mutableStateOf("") }
     var agreedToTerms by remember { mutableStateOf(false) }
 
@@ -141,9 +143,9 @@ fun SignUpScreen(
         Text(text = "Mobile Number", fontSize = 12.sp, fontWeight = SemiBold, color = Color.DarkGray)
         Spacer(modifier = Modifier.height(5.dp))
         TextField(
-            value = mobileNumber,
+            value = mobileNumberField,
             onValueChange = { input ->
-                mobileNumber = formatMalaysianMobile(input)
+                mobileNumberField = formatMalaysianMobile(input)
             },
             placeholder = { Text("012-3456789", color = Color(0xFF8DA6FF)) },
             modifier = Modifier.fillMaxWidth(),
@@ -244,7 +246,7 @@ fun SignUpScreen(
                     fullName = fullName,
                     password = password,
                     email = email,
-                    mobileNumber = mobileNumber,
+                    mobileNumber = mobileNumberField.text,
                     dateOfBirth = dateOfBirth,
                     agreedToTerms = agreedToTerms
                 )
@@ -260,7 +262,7 @@ fun SignUpScreen(
                         fullName = fullName.trim(),
                         email = email.trim(),
                         password = com.example.assignment.database.hashPassword(password),
-                        mobileNumber = mobileNumber.trim(),
+                        mobileNumber = mobileNumberField.text.trim(),
                         dateOfBirth = dateOfBirth.trim()
                     )
                     viewModel.signUp(newUser) { savedUsername ->
@@ -419,20 +421,43 @@ private fun validateSignUpForm(
  * Most prefixes: 01X-XXXXXXX (10 digits total, e.g. 012-3456789)
  * 011 prefix:    011-XXXXXXXX (11 digits total, e.g. 011-12345678)
  */
-private fun formatMalaysianMobile(input: String): String {
-    val digits = input.filter { it.isDigit() }
+/**
+ * Formats raw digit input into Malaysian mobile format and keeps the
+ * cursor positioned correctly after the newly-typed digit (not at the end).
+ */
+private fun formatMalaysianMobile(input: TextFieldValue): TextFieldValue {
+    val originalCursor = input.selection.start
+    val rawDigitsBeforeCursor = input.text.take(originalCursor).count { it.isDigit() }
 
-    // 011 numbers get an extra digit before the dash; everything else is 3-then-rest
-    val prefixLength = if (digits.startsWith("011")) 3 else 3
+    val digits = input.text.filter { it.isDigit() }
     val maxLength = if (digits.startsWith("011")) 11 else 10
-
     val capped = digits.take(maxLength)
 
-    return if (capped.length <= prefixLength) {
+    val formatted = if (capped.length <= 3) {
         capped
     } else {
-        "${capped.substring(0, prefixLength)}-${capped.substring(prefixLength)}"
+        "${capped.substring(0, 3)}-${capped.substring(3)}"
     }
+
+    // Walk forward through the formatted string until we've passed the same
+    // number of digits that were before the cursor originally
+    var digitsSeen = 0
+    var newCursor = formatted.length
+    for (i in formatted.indices) {
+        if (formatted[i].isDigit()) {
+            digitsSeen++
+            if (digitsSeen == rawDigitsBeforeCursor) {
+                newCursor = i + 1
+                break
+            }
+        }
+    }
+    if (rawDigitsBeforeCursor == 0) newCursor = 0
+
+    return TextFieldValue(
+        text = formatted,
+        selection = TextRange(newCursor)
+    )
 }
 
 private fun validateDateLogic(dateStr: String): String? {
