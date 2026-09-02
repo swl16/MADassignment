@@ -88,7 +88,8 @@ class UserViewModel(private val userDao: UserDao) : ViewModel() {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    _errorMessage.value = "Invalid email/username or password (or no internet connection)"
+                    _errorMessage.value =
+                        "Invalid email/username or password (or no internet connection)"
                 }
             }
         }
@@ -168,10 +169,8 @@ class UserViewModel(private val userDao: UserDao) : ViewModel() {
     fun findUserForReset(identifier: String, onUserVerified: (String) -> Unit) {
         viewModelScope.launch {
             // 1. Try local Room DB first (Email or Username)
-            val localByEmail = userDao.getUserByEmail(identifier)
-            val localByUsername = userDao.getUserByUsername(identifier)
-
-            val localUser = localByEmail ?: localByUsername
+            val localUser =
+                userDao.getUserByEmail(identifier) ?: userDao.getUserByUsername(identifier)
 
             if (localUser != null) {
                 _errorMessage.value = ""
@@ -181,23 +180,25 @@ class UserViewModel(private val userDao: UserDao) : ViewModel() {
                 try {
                     val remoteByEmail = SupabaseService.client.from("users")
                         .select { filter { eq("email", identifier) } }
-                        .decodeSingleOrNull<User>()
+                        .decodeList<User>()
+                        .firstOrNull()
 
-                    val remoteByUsername = SupabaseService.client.from("users")
+                    val remoteUser = remoteByEmail ?: SupabaseService.client.from("users")
                         .select { filter { eq("username", identifier) } }
-                        .decodeSingleOrNull<User>()
-
-                    val remoteUser = remoteByEmail ?: remoteByUsername
+                        .decodeList<User>()
+                        .firstOrNull()
 
                     if (remoteUser != null) {
-                        // Restore them to Room locally
+                        // Found in the cloud — restore them to Room locally
                         userDao.insertUser(remoteUser)
                         _errorMessage.value = ""
                         onUserVerified(remoteUser.username)
                     } else {
+                        // Genuinely not found — no exception was thrown to get here
                         _errorMessage.value = "User not found. Please check your email or username."
                     }
                 } catch (e: Exception) {
+                    // Now this only fires on actual network/server failures
                     e.printStackTrace()
                     _errorMessage.value = "Error connecting to server. Please try again later."
                 }
