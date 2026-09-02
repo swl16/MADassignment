@@ -118,7 +118,7 @@ fun LoginPage(
         Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(
-            onClick = { onNavigateToForgotPassword },
+            onClick = { onNavigateToForgotPassword() },
             modifier = Modifier.align(Alignment.End),
             contentPadding = PaddingValues(0.dp)
         ){

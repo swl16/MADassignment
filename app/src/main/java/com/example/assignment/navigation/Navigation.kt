@@ -1,6 +1,5 @@
 package com.example.assignment.navigation
 
-import android.R.attr.apiKey
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -42,7 +41,7 @@ import com.example.assignment.profile.ProfileScreen
 import com.example.assignment.reminder.AddReminderScreen
 import com.example.assignment.reminder.ReminderDetailsScreen
 import com.example.assignment.reminder.ReminderScreen
-import com.example.assignment.viewmodel.EmergencyContactViewModel // NEW IMPORT
+import com.example.assignment.viewmodel.EmergencyContactViewModel
 import com.example.assignment.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -100,7 +99,7 @@ fun AppNavigation() {
             LoginPage(
                 viewModel = userViewModel,
                 onNavigateToSignUp = { navController.navigate("signup") },
-                onNavigateToForgotPassword = { navController.navigate("forgot_password") }, // NEW
+                onNavigateToForgotPassword = { navController.navigate("forgot_password") },
                 onNavigateToHome = { username ->
                     activeUsername = username
                     navController.navigate("home") {
