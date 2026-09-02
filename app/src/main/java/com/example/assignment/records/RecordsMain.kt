@@ -1,6 +1,5 @@
 package com.example.assignment.records
 
-import android.R.attr.type
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,7 +44,11 @@ fun RecordsMain(navController: NavController) {
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            NavHost(navController = recordsNavController, startDestination = "records_menu") {
+            NavHost(
+                navController = recordsNavController,
+                startDestination = "records_menu",
+                modifier = Modifier.fillMaxSize()
+            ) {
 
                 composable("records_menu") {
                     RecordsMenuScreen(
