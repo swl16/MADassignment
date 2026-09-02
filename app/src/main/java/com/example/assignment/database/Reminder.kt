@@ -1,9 +1,13 @@
 package com.example.assignment.database
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@Entity(tableName = "reminders")
 @Serializable
 data class Reminder(
+    @PrimaryKey
     @SerialName("id")
     val id: String? = null, // Supabase generates this UUID automatically
 

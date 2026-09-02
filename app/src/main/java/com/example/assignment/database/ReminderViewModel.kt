@@ -3,13 +3,12 @@ package com.example.assignment.database
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class ReminderViewModel: ViewModel(){
-    private val repository = ReminderRepository()
+class ReminderViewModel(private val repository: ReminderRepository): ViewModel(){
     private val supabaseAuth = SupabaseService.client.auth
 
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
@@ -21,31 +20,26 @@ class ReminderViewModel: ViewModel(){
 
     fun fetchReminders() {
         viewModelScope.launch {
-            try {
-                val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
+            val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
 
-                _reminders.value = repository.getRemindersForUser(username)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            repository.observeReminders(username).collectLatest {localData -> _reminders.value = localData}
+
+        }
+        refreshFromCloud()
+    }
+
+
+    fun refreshFromCloud(){
+        viewModelScope.launch {
+            val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
+            repository.syncFromRemote(username)
         }
     }
 
     fun saveReminder(reminder: Reminder) {
         viewModelScope.launch {
-            try {
-                val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
-                val reminderToSave = reminder.copy(username = username)
-
-                if (reminderToSave.id == null) {
-                    repository.insertReminder(reminderToSave)
-                } else {
-                    repository.updateReminder(reminderToSave)
-                }
-                fetchReminders() // Refresh list after mutation
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
+            repository.saveReminder(reminder.copy(username = username))
         }
     }
 
