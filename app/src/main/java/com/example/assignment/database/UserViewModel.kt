@@ -161,4 +161,44 @@ class UserViewModel(private val userDao: UserDao) : ViewModel() {
             }
         }
     }
+
+    fun findUserForReset(identifier: String, onUserVerified: (String) -> Unit) {
+        viewModelScope.launch {
+            // 1. Try local Room DB first (Email or Username)
+            val localByEmail = userDao.getUserByEmail(identifier)
+            val localByUsername = userDao.getUserByUsername(identifier)
+
+            val localUser = localByEmail ?: localByUsername
+
+            if (localUser != null) {
+                _errorMessage.value = ""
+                onUserVerified(localUser.username)
+            } else {
+                // 2. Try Supabase cloud fallback
+                try {
+                    val remoteByEmail = SupabaseService.client.from("users")
+                        .select { filter { eq("email", identifier) } }
+                        .decodeSingleOrNull<User>()
+
+                    val remoteByUsername = SupabaseService.client.from("users")
+                        .select { filter { eq("username", identifier) } }
+                        .decodeSingleOrNull<User>()
+
+                    val remoteUser = remoteByEmail ?: remoteByUsername
+
+                    if (remoteUser != null) {
+                        // Restore them to Room locally
+                        userDao.insertUser(remoteUser)
+                        _errorMessage.value = ""
+                        onUserVerified(remoteUser.username)
+                    } else {
+                        _errorMessage.value = "User not found. Please check your email or username."
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    _errorMessage.value = "Error connecting to server. Please try again later."
+                }
+            }
+        }
+    }
 }
