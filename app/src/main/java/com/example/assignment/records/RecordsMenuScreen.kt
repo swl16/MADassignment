@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.assignment.database.Record
 import com.example.assignment.database.RecordCategory
-import com.example.assignment.database.RecordDao
+import com.example.assignment.viewmodel.RecordViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -35,23 +35,24 @@ val TextSecondary = Color(0xFF8891A5)
 
 @Composable
 fun RecordsMenuScreen(
-    recordDao: RecordDao,
+    viewModel: RecordViewModel,
+    username: String,
     onBackClick: () -> Unit,
     onUploadClick: () -> Unit,
     onCategoryClick: (RecordCategory) -> Unit,
-    onRecordClick: (Long) -> Unit
+    onRecordClick: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
-    val searchResults by remember(searchQuery) {
-        if (searchQuery.isBlank()) recordDao.getRecentRecords(3)
-        else recordDao.searchRecords(searchQuery)
+    val searchResults by remember(searchQuery, username) {
+        if (searchQuery.isBlank()) viewModel.getRecentRecords(username, 3)
+        else viewModel.searchRecords(username, searchQuery)
     }.collectAsState(initial = emptyList())
 
-    val labCount by recordDao.getCategoryCount(RecordCategory.LAB_RESULTS).collectAsState(initial = 0)
-    val rxCount by recordDao.getCategoryCount(RecordCategory.PRESCRIPTIONS).collectAsState(initial = 0)
-    val vacCount by recordDao.getCategoryCount(RecordCategory.VACCINATION).collectAsState(initial = 0)
-    val imgCount by recordDao.getCategoryCount(RecordCategory.IMAGING).collectAsState(initial = 0)
+    val labCount by viewModel.getCategoryCount(username, RecordCategory.LAB_RESULTS).collectAsState(initial = 0)
+    val rxCount by viewModel.getCategoryCount(username, RecordCategory.PRESCRIPTIONS).collectAsState(initial = 0)
+    val vacCount by viewModel.getCategoryCount(username, RecordCategory.VACCINATION).collectAsState(initial = 0)
+    val imgCount by viewModel.getCategoryCount(username, RecordCategory.IMAGING).collectAsState(initial = 0)
 
     Column(
         modifier = Modifier
@@ -221,5 +222,5 @@ fun RecordCategoryBadge(code: String) {
 
 fun formatRecordDate(millis: Long): String {
     val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-    return formatter.format(Date(millis))
+    return if (millis > 0) formatter.format(Date(millis)) else "Unknown date"
 }

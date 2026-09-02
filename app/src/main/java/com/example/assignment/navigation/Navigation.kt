@@ -41,6 +41,8 @@ import com.example.assignment.profile.ProfileScreen
 import com.example.assignment.reminder.AddReminderScreen
 import com.example.assignment.reminder.ReminderDetailsScreen
 import com.example.assignment.reminder.ReminderScreen
+import com.example.assignment.database.RecordRepository
+import com.example.assignment.viewmodel.RecordViewModel
 import com.example.assignment.viewmodel.EmergencyContactViewModel
 import com.example.assignment.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
@@ -58,6 +60,7 @@ fun AppNavigation() {
     val userDao = db.userDao()
     val appointmentDao = db.appointmentDao()
     val emergencyContactDao = db.emergencyContactDao()
+    val recordDao = db.recordDao()
 
     val reminderDao = db.reminderDao()
     val reminderRepository = remember{ com.example.assignment.database.ReminderRepository(reminderDao)}
@@ -87,6 +90,15 @@ fun AppNavigation() {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return EmergencyContactViewModel(emergencyContactDao) as T
+            }
+        }
+    )
+
+    val recordViewModel: RecordViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return RecordViewModel(RecordRepository(recordDao, context)) as T
             }
         }
     )
@@ -216,7 +228,7 @@ fun AppNavigation() {
         }
 
         composable("records") {
-            com.example.assignment.records.RecordsMain(navController)
+            com.example.assignment.records.RecordsMain(navController, activeUsername, recordViewModel)
         }
 
         composable("profile") {

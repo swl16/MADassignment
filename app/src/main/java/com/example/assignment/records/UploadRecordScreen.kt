@@ -20,15 +20,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.assignment.database.Record
 import com.example.assignment.database.RecordCategory
-import com.example.assignment.database.RecordDao
+import com.example.assignment.viewmodel.RecordViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadRecordScreen(
-    recordDao: RecordDao,
+    viewModel: RecordViewModel,
+    username: String,
     fileStorageHelper: FileStorageHelper,
     preselectedCategory: RecordCategory? = null,
     onBackClick: () -> Unit,
@@ -41,7 +41,7 @@ fun UploadRecordScreen(
     var selectedFileDisplayName by remember { mutableStateOf<String?>(null) }
     var recordTitle by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(preselectedCategory ?: RecordCategory.LAB_RESULTS) }
-    var recordDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var recordDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var providerName by remember { mutableStateOf("") }
     var isUploading by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -74,7 +74,6 @@ fun UploadRecordScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // Upload dropzone
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -134,8 +133,6 @@ fun UploadRecordScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Doctor / Clinic — optional, populates the "• Dr. Sarah Lim" / "• HealthCare Clinic"
-        // text shown next to dates on the category list screens.
         FieldLabel("Doctor / Clinic (optional)")
         OutlinedTextField(
             value = providerName,
@@ -172,22 +169,18 @@ fun UploadRecordScreen(
             onClick = {
                 val uri = selectedFileUri ?: return@Button
                 isUploading = true
-                scope.launch {
-                    val (savedFileName, fileType) = fileStorageHelper.copyToInternalStorage(uri)
-                    recordDao.insert(
-                        Record(
-                            title = recordTitle.trim(),
-                            category = selectedCategory,
-                            fileName = savedFileName,
-                            fileType = fileType,
-                            recordDateMillis = recordDateMillis,
-                            uploadedAtMillis = System.currentTimeMillis(),
-                            provider = providerName.trim().ifBlank { null }
-                        )
-                    )
-                    isUploading = false
-                    onUploadComplete()
-                }
+                viewModel.uploadRecord(
+                    username = username,
+                    fileUri = uri,
+                    title = recordTitle.trim(),
+                    category = selectedCategory,
+                    recordDateMillis = recordDateMillis,
+                    provider = providerName.trim(),
+                    onComplete = {
+                        isUploading = false
+                        onUploadComplete()
+                    }
+                )
             },
             enabled = isFormValid && !isUploading,
             modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -246,7 +239,7 @@ fun CategoryDropdown(
             value = selected.displayName,
             onValueChange = {},
             readOnly = true,
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
             trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = TextSecondary) },
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(

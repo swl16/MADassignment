@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,14 +20,14 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.assignment.database.Record
 import com.example.assignment.database.RecordCategory
-import com.example.assignment.database.RecordDao
+import com.example.assignment.viewmodel.RecordViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordDetailScreen(
-    recordId: Long,
-    recordDao: RecordDao,
+    recordId: String,
+    viewModel: RecordViewModel,
     fileStorageHelper: FileStorageHelper,
     onBackClick: () -> Unit,
     onDeleteComplete: () -> Unit
@@ -36,20 +35,18 @@ fun RecordDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // The record as loaded from Room (source of truth, unedited)
     var originalRecord by remember { mutableStateOf<Record?>(null) }
 
-    // Local editable copies — only written back to Room when "Save Changes" is tapped
     var editedTitle by remember { mutableStateOf("") }
     var editedCategory by remember { mutableStateOf(RecordCategory.LAB_RESULTS) }
-    var editedDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var editedDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
 
     LaunchedEffect(recordId) {
-        val record = recordDao.getRecordById(recordId)
+        val record = viewModel.getRecordById(recordId)
         originalRecord = record
         record?.let {
             editedTitle = it.title
@@ -61,7 +58,6 @@ fun RecordDetailScreen(
     val record = originalRecord
 
     if (record == null) {
-        // Still loading, or record was deleted from elsewhere
         Box(
             modifier = Modifier.fillMaxSize().background(RecordsScreenBg),
             contentAlignment = Alignment.Center
@@ -83,7 +79,6 @@ fun RecordDetailScreen(
     ) {
         Spacer(Modifier.height(20.dp))
 
-        // Top bar
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
@@ -93,7 +88,6 @@ fun RecordDetailScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // File preview panel
         FilePreviewPanel(
             record = record,
             fileStorageHelper = fileStorageHelper
@@ -144,17 +138,15 @@ fun RecordDetailScreen(
 
         Spacer(Modifier.height(28.dp))
 
-        // Save Changes button
         Button(
             onClick = {
                 isSaving = true
-                scope.launch {
-                    val updated = record.copy(
-                        title = editedTitle.trim(),
-                        category = editedCategory,
-                        recordDateMillis = editedDateMillis
-                    )
-                    recordDao.update(updated)
+                val updated = record.copy(
+                    title = editedTitle.trim(),
+                    categoryName = editedCategory.name,
+                    recordDateMillis = editedDateMillis
+                )
+                viewModel.updateRecord(updated) {
                     originalRecord = updated
                     isSaving = false
                 }
@@ -176,7 +168,6 @@ fun RecordDetailScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // Delete Record button — outlined red, matches design
         OutlinedButton(
             onClick = { showDeleteConfirm = true },
             modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -208,9 +199,8 @@ fun RecordDetailScreen(
             text = { Text("\"${record.title}\" will be permanently deleted. This can't be undone.") },
             confirmButton = {
                 TextButton(onClick = {
-                    scope.launch {
-                        fileStorageHelper.deleteFile(record.fileName)
-                        recordDao.delete(record)
+                    fileStorageHelper.deleteFile(record.fileName)
+                    viewModel.deleteRecord(record) {
                         showDeleteConfirm = false
                         onDeleteComplete()
                     }
