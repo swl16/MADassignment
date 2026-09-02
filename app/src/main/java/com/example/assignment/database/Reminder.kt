@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data class Reminder(
     @PrimaryKey
     @SerialName("id")
-    val id: String? = null, // Supabase generates this UUID automatically
+    val id: String = java.util.UUID.randomUUID().toString(),
 
     @SerialName("username")
     val username: String = "",
