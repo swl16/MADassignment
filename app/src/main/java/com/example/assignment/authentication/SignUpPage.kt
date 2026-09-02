@@ -1,6 +1,5 @@
 package com.example.assignment.authentication
 
-import android.util.Patterns
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -45,9 +44,6 @@ import androidx.compose.ui.unit.sp
 import com.example.assignment.ui.components.PasswordTextField
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
 @Composable
 fun SignUpScreen(
@@ -62,15 +58,9 @@ fun SignUpScreen(
     var mobileNumberField by remember { mutableStateOf(TextFieldValue("")) }
     var dateOfBirth by remember { mutableStateOf("") }
     var agreedToTerms by remember { mutableStateOf(false) }
-
-    // NEW: Local validation error, separate from the ViewModel's server/db error
     var validationError by remember { mutableStateOf("") }
-
-    // NEW: Which dialog (if any) is currently showing
     var activeDialog by remember { mutableStateOf<LegalDialog?>(null) }
-
     val viewModelError by viewModel.errorMessage.collectAsState()
-    // Show whichever error is more recent: prioritize local validation feedback
     val displayedError = if (validationError.isNotEmpty()) validationError else viewModelError
 
     Column(
@@ -377,39 +367,23 @@ private fun validateSignUpForm(
     agreedToTerms: Boolean
 ): String? {
     val passwordError = validatePassword(password)
-    val dateValidationResult = if (dateOfBirth.isNotBlank()) validateDateLogic(dateOfBirth.trim()) else null
+    val fullNameError = validateFullName(fullName)
+    val emailError = validateEmail(email)
+    val mobileError = validateMalaysianMobile(mobileNumber)
+    val dobError = validateDateOfBirth(dateOfBirth)
 
     return when {
-        // --- 1. Username Validation ---
         username.isBlank() -> "Username is required"
         username.trim().length < 3 -> "Username must be at least 3 characters"
         username.contains(" ") -> "Username cannot contain spaces"
         !username.matches(Regex("^[a-zA-Z0-9_]+$")) -> "Username can only contain letters, numbers, and underscores"
 
-        // --- 2. Full Name Validation ---
-        fullName.isBlank() -> "Full name is required"
-        fullName.trim().length < 2 -> "Full name is too short"
-        !fullName.matches(Regex("^[a-zA-Z\\s'.-]+$")) -> "Name can only contain letters, spaces, hyphens, or apostrophes"
-
-        // --- 3. Password Validation ---
+        fullNameError != null -> fullNameError
         passwordError != null -> passwordError
+        emailError != null -> emailError
+        mobileError != null -> mobileError
+        dobError != null -> dobError
 
-        // --- 4. Email Validation ---
-        email.isBlank() -> "Email is required"
-        !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> "Please enter a valid email address"
-
-        // --- 5. Mobile Number Validation ---
-        mobileNumber.isBlank() -> "Mobile number is required"
-        !mobileNumber.matches(Regex("^01[0-9]-[0-9]{7,8}$")) ->
-            "Please enter a valid Malaysian mobile number (e.g. 012-3456789)"
-
-        // --- 6. Date of Birth Validation ---
-        dateOfBirth.isBlank() -> "Date of birth is required"
-        !dateOfBirth.trim().matches(Regex("^\\d{2}/\\d{2}/\\d{4}$")) ->
-            "Date of birth must be in DD/MM/YYYY format"
-        dateValidationResult != null -> dateValidationResult
-
-        // --- 7. Terms & Conditions ---
         !agreedToTerms -> "You must agree to the Terms of Use and Privacy Policy"
 
         else -> null
@@ -420,10 +394,6 @@ private fun validateSignUpForm(
  * Formats raw digit input into Malaysian mobile format.
  * Most prefixes: 01X-XXXXXXX (10 digits total, e.g. 012-3456789)
  * 011 prefix:    011-XXXXXXXX (11 digits total, e.g. 011-12345678)
- */
-/**
- * Formats raw digit input into Malaysian mobile format and keeps the
- * cursor positioned correctly after the newly-typed digit (not at the end).
  */
 private fun formatMalaysianMobile(input: TextFieldValue): TextFieldValue {
     val originalCursor = input.selection.start
@@ -458,22 +428,4 @@ private fun formatMalaysianMobile(input: TextFieldValue): TextFieldValue {
         text = formatted,
         selection = TextRange(newCursor)
     )
-}
-
-private fun validateDateLogic(dateStr: String): String? {
-    return try {
-        // Enforce strict parsing
-        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-        val parsedDate = LocalDate.parse(dateStr, formatter)
-        val today = LocalDate.now()
-
-        when {
-            parsedDate.isAfter(today) -> "Date of birth cannot be in the future"
-            // Optional: Prevent them from being 150 years old
-            parsedDate.isBefore(today.minusYears(130)) -> "Please enter a valid year"
-            else -> null // Date is valid
-        }
-    } catch (e: DateTimeParseException) {
-        "Please enter a valid calendar date (e.g., 31/12/1990)"
-    }
 }

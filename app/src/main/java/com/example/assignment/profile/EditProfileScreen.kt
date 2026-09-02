@@ -1,7 +1,6 @@
 package com.example.assignment.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,37 +25,41 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.assignment.authentication.validateDateOfBirth
+import com.example.assignment.authentication.validateEmail
+import com.example.assignment.authentication.validateFullName
+import com.example.assignment.authentication.validateMalaysianMobile
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
 fun EditProfileScreen(
-    viewModel: UserViewModel, // CHANGED: Accept ViewModel instead of UserDao
+    viewModel: UserViewModel,
     username: String,
     onNavigateBack: () -> Unit
 ) {
-    // Observe the user data from ViewModel
     val currentUser by viewModel.currentUser.collectAsState()
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
+    var phoneField by remember { mutableStateOf(TextFieldValue("")) } // CHANGED: cursor-safe
     var dob by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") } // NEW
 
-    // Pre-fill fields when currentUser data arrives from the ViewModel
     LaunchedEffect(currentUser) {
         currentUser?.let { user ->
             fullName = user.fullName
             email = user.email
-            phone = user.mobileNumber
+            phoneField = TextFieldValue(user.mobileNumber) // CHANGED
             dob = user.dateOfBirth
         }
     }
 
-    // Default to "--" if name hasn't loaded yet
     val initials = fullName.take(2).uppercase().ifEmpty { "--" }
 
     Column(
@@ -90,36 +93,64 @@ fun EditProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Change photo",
-                color = Color(0xFF1E50FF),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable { /* TODO later */ }
-            )
-
             Spacer(modifier = Modifier.height(32.dp))
 
             ProfileInputField(label = "Full name", value = fullName, onValueChange = { fullName = it })
             ProfileInputField(label = "Email address", value = email, onValueChange = { email = it })
-            ProfileInputField(label = "Phone number", value = phone, onValueChange = { phone = it })
+
+            // CHANGED: phone number now uses cursor-safe formatted field
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Text(text = "Phone number", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = phoneField,
+                    onValueChange = { input -> phoneField = formatMalaysianMobileField(input) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appTextFieldColors(Color.White),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
+                    )
+                )
+            }
+
             ProfileInputField(label = "Date of birth", value = dob, onValueChange = { dob = it })
+
+            // NEW: inline error message
+            if (errorMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = {
-                    currentUser?.let { user ->
-                        val updatedUser = user.copy(
-                            fullName = fullName,
-                            email = email,
-                            mobileNumber = phone,
-                            dateOfBirth = dob
-                        )
-                        // CHANGED: Use ViewModel to save to Room + Supabase
-                        viewModel.updateUserProfile(updatedUser)
-                        onNavigateBack()
+                    val error = validateFullName(fullName)
+                        ?: validateEmail(email)
+                        ?: validateMalaysianMobile(phoneField.text)
+                        ?: validateDateOfBirth(dob)
+
+                    if (error != null) {
+                        errorMessage = error
+                    } else {
+                        errorMessage = ""
+                        currentUser?.let { user ->
+                            val updatedUser = user.copy(
+                                fullName = fullName.trim(),
+                                email = email.trim(),
+                                mobileNumber = phoneField.text.trim(),
+                                dateOfBirth = dob.trim()
+                            )
+                            viewModel.updateUserProfile(updatedUser)
+                            onNavigateBack()
+                        }
                     }
                 },
                 modifier = Modifier
@@ -148,4 +179,34 @@ fun ProfileInputField(label: String, value: String, onValueChange: (String) -> U
             shape = RoundedCornerShape(12.dp)
         )
     }
+}
+
+/**
+ * Cursor-safe Malaysian mobile formatter for TextFieldValue —
+ * same logic as SignUpScreen's formatter, reused here for edit profile.
+ */
+private fun formatMalaysianMobileField(input: TextFieldValue): TextFieldValue {
+    val originalCursor = input.selection.start
+    val rawDigitsBeforeCursor = input.text.take(originalCursor).count { it.isDigit() }
+
+    val digits = input.text.filter { it.isDigit() }
+    val maxLength = if (digits.startsWith("011")) 11 else 10
+    val capped = digits.take(maxLength)
+
+    val formatted = if (capped.length <= 3) capped else "${capped.substring(0, 3)}-${capped.substring(3)}"
+
+    var digitsSeen = 0
+    var newCursor = formatted.length
+    for (i in formatted.indices) {
+        if (formatted[i].isDigit()) {
+            digitsSeen++
+            if (digitsSeen == rawDigitsBeforeCursor) {
+                newCursor = i + 1
+                break
+            }
+        }
+    }
+    if (rawDigitsBeforeCursor == 0) newCursor = 0
+
+    return TextFieldValue(text = formatted, selection = TextRange(newCursor))
 }
