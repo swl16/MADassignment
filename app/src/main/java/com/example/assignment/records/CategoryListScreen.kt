@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,37 +19,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.assignment.database.Record
 import com.example.assignment.database.RecordCategory
-import com.example.assignment.database.RecordDao
+import com.example.assignment.viewmodel.RecordViewModel
 import kotlinx.coroutines.launch
 
-/**
- * Shared list screen for all 4 categories: Lab Results, Prescriptions, Vaccination, Imaging.
- * Reused by RecordsMain for all 4 "records_category/{categoryName}" destinations —
- * matches your designs, which are identical in layout aside from title, search hint, and filtered data.
- */
 @Composable
 fun CategoryListScreen(
     category: RecordCategory,
-    recordDao: RecordDao,
+    viewModel: RecordViewModel,
+    username: String,
     onBackClick: () -> Unit,
     onUploadClick: () -> Unit,
-    onRecordClick: (Long) -> Unit
+    onRecordClick: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var searchQuery by remember(category) { mutableStateOf("") }
     var recordPendingDelete by remember { mutableStateOf<Record?>(null) }
 
-    val records by remember(category, searchQuery) {
-        if (searchQuery.isBlank()) recordDao.getRecordsByCategory(category)
-        else recordDao.searchRecordsInCategory(category, searchQuery)
+    val records by remember(category, searchQuery, username) {
+        if (searchQuery.isBlank()) viewModel.getRecordsByCategory(username, category)
+        else viewModel.searchRecordsInCategory(username, category, searchQuery)
     }.collectAsState(initial = emptyList())
 
-    val screenTitle = when (category) {
-        RecordCategory.LAB_RESULTS -> "Lab Results"
-        RecordCategory.PRESCRIPTIONS -> "Prescriptions"
-        RecordCategory.VACCINATION -> "Vaccination"
-        RecordCategory.IMAGING -> "Imaging"
-    }
+    val screenTitle = category.displayName
     val searchHint = "Search ${category.displayName.lowercase()}"
 
     Column(
@@ -61,7 +51,6 @@ fun CategoryListScreen(
     ) {
         Spacer(Modifier.height(20.dp))
 
-        // Top bar: back + title + Upload button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -119,7 +108,6 @@ fun CategoryListScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // "Files are encrypted and stored securely." footer banner
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,7 +126,6 @@ fun CategoryListScreen(
         Spacer(Modifier.height(20.dp))
     }
 
-    // Delete confirmation, triggered from a list item's ⋮ menu
     recordPendingDelete?.let { record ->
         AlertDialog(
             onDismissRequest = { recordPendingDelete = null },
@@ -146,8 +133,7 @@ fun CategoryListScreen(
             text = { Text("\"${record.title}\" will be permanently deleted. This can't be undone.") },
             confirmButton = {
                 TextButton(onClick = {
-                    scope.launch {
-                        recordDao.delete(record)
+                    viewModel.deleteRecord(record) {
                         recordPendingDelete = null
                     }
                 }) {
@@ -187,7 +173,7 @@ fun CategoryListItem(
                 Text(
                     text = buildString {
                         append(formatRecordDate(record.recordDateMillis))
-                        record.provider?.let { append(" • $it") }
+                        record.provider?.let { if (it.isNotBlank()) append(" • $it") }
                     },
                     fontSize = 13.sp,
                     color = TextSecondary
