@@ -1,5 +1,4 @@
 package com.example.assignment.viewmodel
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.assignment.database.SupabaseService
