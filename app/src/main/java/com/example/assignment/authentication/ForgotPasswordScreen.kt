@@ -116,6 +116,7 @@ fun ForgotPasswordScreen(
         Button(
             onClick = {
                 if (identifier.isBlank()) return@Button
+                viewModel.clearError()
                 viewModel.findUserForReset(identifier) { username ->
                     onUserVerified(username)
                 }
