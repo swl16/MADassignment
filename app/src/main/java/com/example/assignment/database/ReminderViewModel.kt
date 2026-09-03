@@ -7,39 +7,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.time.temporal.TemporalQueries.localDate
 
 class ReminderViewModel(private val repository: ReminderRepository): ViewModel(){
-    private val supabaseAuth = SupabaseService.client.auth
 
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
     val reminders: StateFlow<List<Reminder>> = _reminders
 
-    init {
-        fetchReminders()
-    }
-
-    fun fetchReminders() {
-        viewModelScope.launch {
-            val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
-
-            repository.observeReminders(username).collectLatest {localData -> _reminders.value = localData}
-
+    fun loadReminders(username : String){
+        viewModelScope.launch{
+            repository.observeReminders(username).collectLatest { localData ->
+                _reminders.value = localData
+            }
         }
-        refreshFromCloud()
+        refreshFromCloud(username)
     }
 
-
-    fun refreshFromCloud(){
+    fun refreshFromCloud(username:String){
         viewModelScope.launch {
-            val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
             repository.syncFromRemote(username)
         }
     }
 
-    fun saveReminder(reminder: Reminder) {
+    fun saveReminder(reminder: Reminder, username: String) {
         viewModelScope.launch {
-            val username = supabaseAuth.currentUserOrNull()?.id ?: return@launch
-            repository.saveReminder(reminder.copy(username = username))
+            repository.saveReminder(reminder.copy(username= username))
         }
     }
 
@@ -47,7 +39,6 @@ class ReminderViewModel(private val repository: ReminderRepository): ViewModel()
         viewModelScope.launch {
             try {
                 repository.deleteReminder(id)
-                fetchReminders()
             } catch (e: Exception) {
                 e.printStackTrace()
             }

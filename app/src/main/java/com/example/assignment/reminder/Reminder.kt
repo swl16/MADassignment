@@ -27,7 +27,11 @@ import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.navigation.BottomNavBar
 
 @Composable
-fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel, username: String) {
+
+    LaunchedEffect(username) {
+        viewModel.loadReminders(username)
+    }
 
     val reminders by viewModel.reminders.collectAsState()
 
@@ -82,8 +86,10 @@ fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel = 
                             statusText = if (reminder.isActive) "Active" else "Inactive",
                             isActive = reminder.isActive,
                             onCheckedChange = { isChecked ->
-                                // Update status directly to the cloud
-                                viewModel.saveReminder(reminder.copy(isActive = isChecked))
+                                viewModel.saveReminder(
+                                    reminder = reminder.copy(isActive = isChecked),
+                                    username = username
+                                )
                             },
                             onClick = {
                                 navController.navigate("reminder_details/${reminder.id}")
@@ -157,8 +163,4 @@ fun ReminderCardItem(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ReminderPreview() {
-    ReminderScreen(navController = androidx.navigation.compose.rememberNavController())
-}
+

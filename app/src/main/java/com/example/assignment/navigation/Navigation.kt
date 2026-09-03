@@ -191,11 +191,16 @@ fun AppNavigation() {
         }
 
         composable("reminders") {
-            ReminderScreen(navController, reminderViewModel)
+            ReminderScreen(
+                navController = navController,
+                viewModel = reminderViewModel,
+                username = activeUsername
+                )
         }
 
         composable("addReminder") {
-            AddReminderScreen(navController, reminderViewModel)
+            AddReminderScreen(
+                navController, reminderViewModel, activeUsername)
         }
 
         composable(
@@ -203,7 +208,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("documentId") { type = NavType.StringType })
         ) { backStackEntry ->
             val docId = backStackEntry.arguments?.getString("documentId") ?: ""
-            ReminderDetailsScreen(navController, reminderViewModel, docId)
+            ReminderDetailsScreen(navController, reminderViewModel, docId, username = activeUsername)
         }
 
         composable("appointments") {
