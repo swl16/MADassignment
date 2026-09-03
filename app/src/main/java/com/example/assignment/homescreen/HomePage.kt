@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,28 +25,38 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState // NEW IMPORT
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.assignment.database.Appointment
+import com.example.assignment.database.AppointmentDao
 import com.example.assignment.navigation.BottomNavBar
-import com.example.assignment.viewmodel.UserViewModel // NEW IMPORT
+import com.example.assignment.viewmodel.UserViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 
 @Composable
 fun HomeScreen(
     navController: NavController,
     viewModel: UserViewModel,
     loggedInUsername: String,
-    onNavigateToProfile: () -> Unit = {},
-    onNavigateToNotifications: () -> Unit = {}
+    appointmentDao: AppointmentDao,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToNotifications: () -> Unit,
+    onNavigateToAppointmentDetail: (Appointment) -> Unit
 ) {
+    val appointments by appointmentDao.getAppointmentsForUser(loggedInUsername)
+        .collectAsState(initial = emptyList())
+
+    val latestAppointment = appointments.firstOrNull()
     // 1. Observe the user state directly from the ViewModel
     val currentUser by viewModel.currentUser.collectAsState()
 
@@ -71,8 +82,10 @@ fun HomeScreen(
                 navController = navController,
                 initials = initials,
                 firstName = firstName,
+                latestAppointment = latestAppointment,
                 onNavigateToProfile = onNavigateToProfile,
-                onNavigateToNotifications = onNavigateToNotifications
+                onNavigateToNotifications = onNavigateToNotifications,
+                onNavigateToAppointmentDetail = onNavigateToAppointmentDetail
             )
         }
     }
@@ -81,28 +94,32 @@ fun HomeScreen(
 @Composable
 fun HomeContent(
     navController: NavController,
-    initials: String, //
-    firstName: String, //
+    initials: String,
+    firstName: String,
+    latestAppointment: Appointment?,
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToNotifications: () -> Unit = {}
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToAppointmentDetail: (Appointment) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-
     ) {
-        // Pass initials to the header
         TopHeader(
             initials = initials,
             onAvatarClick = onNavigateToProfile,
             onBellClick = onNavigateToNotifications
         )
 
-        // Pass first name to the greeting
         GreetingLayer(firstName = firstName)
 
-        NextAppointmentCard()
+        NextAppointmentCard(
+            appointment = latestAppointment,
+            onClick = {
+                latestAppointment?.let { onNavigateToAppointmentDetail(it) }
+            }
+        )
         Spacer(modifier = Modifier.height(10.dp))
         QuickActionsGrid(navController = navController)
         Spacer(modifier = Modifier.height(20.dp))
@@ -191,60 +208,64 @@ fun GreetingLayer(
 }
 
 @Composable
-fun NextAppointmentCard() {
+fun NextAppointmentCard(
+    appointment: Appointment?,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp),
+            .padding(horizontal = 22.dp)
+            .clickable(enabled = appointment != null, onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E50FF)),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "NEXT APPOINTMENT",
                 fontSize = 12.sp,
-                fontWeight = SemiBold,
+                fontWeight = FontWeight.SemiBold,
                 color = Color.White.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(12.dp))
 
+            if (appointment == null) {
+                Text(
+                    text = "No upcoming appointments",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                return@Column
+            }
+
             Text(
-                text = "Dr. Sarah Lim",
+                text = appointment.doctorName,
                 fontSize = 24.sp,
-                fontWeight = Bold,
+                fontWeight = FontWeight.Bold,
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically // Centers everything nicely
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "General Medicine",
+                    text = appointment.specialty,
                     fontSize = 12.sp,
-                    fontWeight = SemiBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color.White.copy(alpha = 0.8f)
                 )
-
-                // THE FIX: The separator is now its own responsive element
+                Text("•", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                 Text(
-                    text = "•",
+                    text = "${formatRelativeDate(appointment.date)}, ${appointment.time}",
                     fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
-
-                Text(
-                    text = "Tomorrow, 10:30 AM",
-                    fontSize = 12.sp,
-                    fontWeight = SemiBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color.White.copy(alpha = 0.8f)
                 )
             }
 
-            // THE FIX: Added a spacer here to push the "View details" box down!
             Spacer(modifier = Modifier.height(16.dp))
 
             Box(
@@ -259,6 +280,19 @@ fun NextAppointmentCard() {
                 )
             }
         }
+    }
+}
+
+private fun formatRelativeDate(dateStr: String): String {
+    return try {
+        val date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+        when (date) {
+            LocalDate.now() -> "Today"
+            LocalDate.now().plusDays(1) -> "Tomorrow"
+            else -> dateStr
+        }
+    } catch (e: Exception) {
+        dateStr
     }
 }
 
