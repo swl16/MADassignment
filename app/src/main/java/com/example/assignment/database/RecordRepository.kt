@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 
 private const val BUCKET_RECORDS = "medical-records"
 
@@ -123,6 +124,17 @@ class RecordRepository(
                 table.delete { filter { eq("id", record.id) } }
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    suspend fun getSignedUrl(filePath: String): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                supabase.storage.from(BUCKET_RECORDS).createSignedUrl(filePath, 5.minutes)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
             }
         }
     }
