@@ -278,6 +278,9 @@ fun AppNavigation() {
 
         composable("notifications") {
             com.example.assignment.notification.NotificationsScreen(
+                username = activeUsername,
+                appointmentDao = appointmentDao,
+                reminderViewModel = reminderViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
