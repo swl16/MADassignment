@@ -34,6 +34,7 @@ import com.example.assignment.authentication.SignUpScreen
 import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
 import com.example.assignment.database.Appointment
+import com.example.assignment.database.RecordRepository
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.nearby.NearbyScreen
 import com.example.assignment.profile.EditProfileScreen
@@ -41,9 +42,8 @@ import com.example.assignment.profile.ProfileScreen
 import com.example.assignment.reminder.AddReminderScreen
 import com.example.assignment.reminder.ReminderDetailsScreen
 import com.example.assignment.reminder.ReminderScreen
-import com.example.assignment.database.RecordRepository
-import com.example.assignment.viewmodel.RecordViewModel
 import com.example.assignment.viewmodel.EmergencyContactViewModel
+import com.example.assignment.viewmodel.RecordViewModel
 import com.example.assignment.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -176,8 +176,13 @@ fun AppNavigation() {
                 navController = navController,
                 viewModel = userViewModel,
                 loggedInUsername = activeUsername,
+                appointmentDao = appointmentDao,
                 onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToNotifications = { navController.navigate("notifications") }
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onNavigateToAppointmentDetail = { appointment ->
+                    selectedAppointment = appointment
+                    navController.navigate("appointment_detail")
+                }
             )
         }
 
