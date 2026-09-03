@@ -73,6 +73,7 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:gotrue-kt:$supabaseVersion") // For Auth
     implementation("io.github.jan-tennert.supabase:storage-kt:$supabaseVersion")
     implementation("io.ktor:ktor-client-android:$ktorVersion")
+    implementation("io.ktor:ktor-client-android:2.3.12")
 
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")

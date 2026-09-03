@@ -4,7 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -44,13 +46,10 @@ fun RecordDetailScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // Loads the record once when this screen opens (and re-loads if navigated to a different id)
     LaunchedEffect(recordId) {
         viewModel.loadRecord(recordId)
     }
 
-    // Whenever the loaded record changes (first load, or after a save), refresh the edit fields
-    // from it — but only if the user hasn't started typing something different yet.
     LaunchedEffect(record) {
         record?.let {
             editedTitle = it.title
@@ -77,14 +76,20 @@ fun RecordDetailScreen(
                 originalMillis != editedDateMillis
             }
 
-    Column(modifier = Modifier.fillMaxSize().background(RecordsScreenBg).padding(horizontal = 20.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(RecordsScreenBg)
+            .verticalScroll(rememberScrollState()) // Enables scrolling
+            .padding(horizontal = 20.dp)
+    ) {
         Spacer(Modifier.height(20.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
-            Text(text = "Medical Record", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary )
+            Text(text = "Medical Record", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
 
         Spacer(Modifier.height(20.dp))
@@ -112,7 +117,7 @@ fun RecordDetailScreen(
 
         Spacer(Modifier.height(16.dp))
         FieldLabel("Category")
-        CategoryDropdown(selected = editedCategory, onSelected = { editedCategory = it })
+        CategoryDropdown(selected = editedCategory, enabled = true, onSelected = { editedCategory = it })
 
         Spacer(Modifier.height(16.dp))
         FieldLabel("Doctor / Clinic (optional)")
@@ -139,14 +144,20 @@ fun RecordDetailScreen(
 
         Spacer(Modifier.height(28.dp))
 
-        // Save Changes — always pressable; validates on press, same non-blocking pattern as Upload.
         Button(
             onClick = {
                 val trimmedTitle = editedTitle.trim()
                 titleError = if (trimmedTitle.isBlank()) "Please enter a record title." else null
                 if (trimmedTitle.isBlank()) return@Button
 
-                viewModel.updateRecord(currentRecord, trimmedTitle, editedCategory, editedDateMillis, editedProvider.trim())
+                val updatedRecord = currentRecord.copy(
+                    title = trimmedTitle,
+                    categoryName = editedCategory.name,
+                    recordDate = Instant.ofEpochMilli(editedDateMillis).toString(),
+                    recordDateMillis = editedDateMillis,
+                    provider = editedProvider.trim().ifBlank { null }
+                )
+                viewModel.updateRecord(updatedRecord)
             },
             enabled = hasChanges,
             modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -168,7 +179,7 @@ fun RecordDetailScreen(
             Text("Delete Record", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(32.dp))
     }
 
     if (showDatePicker) {

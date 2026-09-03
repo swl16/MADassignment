@@ -15,8 +15,9 @@ data class Record(
     @SerialName("username")
     val username: String = "",
 
+    @SerialName("title")
     val title: String = "",
-    
+
     @SerialName("category")
     val categoryName: String = "",
 
@@ -26,15 +27,22 @@ data class Record(
     @SerialName("file_type")
     val fileType: String = "",
 
+    @SerialName("provider")
     val provider: String? = null,
 
     @SerialName("record_date")
     val recordDate: String = "",
+
     @SerialName("uploaded_at")
     val uploadedAt: String = "",
 
+    @SerialName("record_date_millis")
     val recordDateMillis: Long = 0L,
+
+    @SerialName("uploaded_at_millis")
     val uploadedAtMillis: Long = 0L,
+
+    @SerialName("file_name")
     val fileName: String = ""
 ) {
     val category: RecordCategory
