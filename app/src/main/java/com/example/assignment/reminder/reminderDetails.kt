@@ -1,5 +1,7 @@
 package com.example.assignment.reminder
 
+import android.R.attr.onClick
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Switch
@@ -42,8 +45,10 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.assignment.database.Reminder
 import com.example.assignment.database.ReminderViewModel
@@ -73,6 +78,8 @@ fun ReminderDetailsScreen(
         "11:00 AM","11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
         "3:00 PM","3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM","7:00 PM",
         "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM")
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     // When the screen loads, find the reminder and populate the fields
     LaunchedEffect(reminderId, reminders) {
@@ -206,15 +213,38 @@ fun ReminderDetailsScreen(
         // Delete Button
         OutlinedButton(
             onClick = {
-                viewModel.deleteReminder(reminderId)
-                navController.popBackStack()
+                showDeleteDialog = true
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF4B4B)),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF4B4B)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = RedDanger),
+            border = BorderStroke(1.dp, RedDanger),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text("Delete Reminder", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        if(showDeleteDialog){
+            AlertDialog(
+                onDismissRequest = {showDeleteDialog = false},
+                title = { Text("Delete Reminder", fontWeight = FontWeight.Bold) },
+                text = { Text("Are you sure you want to delete this reminder?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel. deleteReminder(reminderId)
+                            navController.popBackStack()
+                        }
+                    ){
+                        Text("Delete", color = RedDanger, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {showDeleteDialog = false}){
+                        Text("Cancel", color = TextDark)
+                    }
+                }
+            )
         }
     }
 }

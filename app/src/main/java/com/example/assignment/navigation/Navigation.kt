@@ -35,6 +35,7 @@ import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
 import com.example.assignment.database.Appointment
 import com.example.assignment.database.RecordRepository
+import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.nearby.NearbyScreen
 import com.example.assignment.profile.EditProfileScreen
@@ -117,6 +118,8 @@ fun AppNavigation() {
             }
         }
 
+        // Inside AppNavigation.kt:
+
         composable("login") {
             LoginPage(
                 viewModel = userViewModel,
@@ -125,7 +128,8 @@ fun AppNavigation() {
                 onNavigateToHome = { username ->
                     activeUsername = username
                     navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                        // Pop the entire auth flow (starting + login)
+                        popUpTo("starting") { inclusive = true }
                     }
                 }
             )
@@ -138,7 +142,8 @@ fun AppNavigation() {
                 onNavigateToHome = { username ->
                     activeUsername = username
                     navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                        // Pop the entire auth flow
+                        popUpTo("starting") { inclusive = true }
                     }
                 }
             )
@@ -177,6 +182,7 @@ fun AppNavigation() {
                 viewModel = userViewModel,
                 loggedInUsername = activeUsername,
                 appointmentDao = appointmentDao,
+                reminderViewModel = reminderViewModel,
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
                 onNavigateToAppointmentDetail = { appointment ->
@@ -238,7 +244,19 @@ fun AppNavigation() {
         }
 
         composable("records") {
-            com.example.assignment.records.RecordsMain(navController, activeUsername, recordViewModel)
+            com.example.assignment.records.RecordsMain(
+                rootNavController = navController,
+                username = activeUsername,
+                viewModel = recordViewModel,
+                onBackToHome = {
+                    // Cleanly return to the existing Home screen without closing the app
+                    if (!navController.popBackStack("home", inclusive = false)) {
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    }
+                }
+            )
         }
 
         composable("profile") {
@@ -444,7 +462,10 @@ fun BottomNavBar(navController: androidx.navigation.NavController, selectedIndex
                 onClick = {
                     if (selectedIndex != index) {
                         navController.navigate(item.first) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            popUpTo("home") {
+                                saveState = true
+                                inclusive = false
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }

@@ -1,5 +1,6 @@
 package com.example.assignment.records
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,15 +14,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.assignment.database.Record
 import com.example.assignment.database.RecordCategory
 import com.example.assignment.viewmodel.RecordViewModel
-import kotlinx.coroutines.launch
+import java.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,138 +33,127 @@ fun RecordDetailScreen(
     onBackClick: () -> Unit,
     onDeleteComplete: () -> Unit
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    var originalRecord by remember { mutableStateOf<Record?>(null) }
+    val record by viewModel.selectedRecord.collectAsState()
 
     var editedTitle by remember { mutableStateOf("") }
     var editedCategory by remember { mutableStateOf(RecordCategory.LAB_RESULTS) }
-    var editedDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var editedDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var editedProvider by remember { mutableStateOf("") }
 
+    var titleError by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var isSaving by remember { mutableStateOf(false) }
 
+    // Loads the record once when this screen opens (and re-loads if navigated to a different id)
     LaunchedEffect(recordId) {
-        val record = viewModel.getRecordById(recordId)
-        originalRecord = record
+        viewModel.loadRecord(recordId)
+    }
+
+    // Whenever the loaded record changes (first load, or after a save), refresh the edit fields
+    // from it — but only if the user hasn't started typing something different yet.
+    LaunchedEffect(record) {
         record?.let {
             editedTitle = it.title
             editedCategory = it.category
-            editedDateMillis = it.recordDateMillis
+            editedDateMillis = try { Instant.parse(it.recordDate).toEpochMilli() } catch (e: Exception) { System.currentTimeMillis() }
+            editedProvider = it.provider ?: ""
         }
     }
 
-    val record = originalRecord
+    val currentRecord = record
 
-    if (record == null) {
-        Box(
-            modifier = Modifier.fillMaxSize().background(RecordsScreenBg),
-            contentAlignment = Alignment.Center
-        ) {
+    if (currentRecord == null) {
+        Box(modifier = Modifier.fillMaxSize().background(RecordsScreenBg), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = PrimaryBlue)
         }
         return
     }
 
-    val hasChanges = editedTitle != record.title ||
-            editedCategory != record.category ||
-            editedDateMillis != record.recordDateMillis
+    val hasChanges = editedTitle != currentRecord.title ||
+            editedCategory != currentRecord.category ||
+            (editedProvider != (currentRecord.provider ?: "")) ||
+            run {
+                val originalMillis = try { Instant.parse(currentRecord.recordDate).toEpochMilli() } catch (e: Exception) { editedDateMillis }
+                originalMillis != editedDateMillis
+            }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(RecordsScreenBg)
-            .padding(horizontal = 20.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(RecordsScreenBg).padding(horizontal = 20.dp)) {
         Spacer(Modifier.height(20.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
-            Text(text = "Medical Record", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(text = "Medical Record", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary )
         }
 
         Spacer(Modifier.height(20.dp))
-
-        FilePreviewPanel(
-            record = record,
-            fileStorageHelper = fileStorageHelper
-        )
-
+        FilePreviewPanel(record = currentRecord, viewModel = viewModel)
         Spacer(Modifier.height(24.dp))
-
         Text(text = "Record information", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-
         Spacer(Modifier.height(12.dp))
 
         FieldLabel("Record title")
         OutlinedTextField(
             value = editedTitle,
-            onValueChange = { editedTitle = it },
+            onValueChange = { editedTitle = it; if (it.isNotBlank()) titleError = null },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            isError = titleError != null,
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = CardWhite, focusedContainerColor = CardWhite,
+                unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue
+            )
+        )
+        if (titleError != null) {
+            Text(text = titleError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        }
+
+        Spacer(Modifier.height(16.dp))
+        FieldLabel("Category")
+        CategoryDropdown(selected = editedCategory, onSelected = { editedCategory = it })
+
+        Spacer(Modifier.height(16.dp))
+        FieldLabel("Doctor / Clinic (optional)")
+        OutlinedTextField(
+            value = editedProvider,
+            onValueChange = { editedProvider = it },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = CardWhite,
-                focusedContainerColor = CardWhite,
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = PrimaryBlue
+                unfocusedContainerColor = CardWhite, focusedContainerColor = CardWhite,
+                unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue
             )
         )
 
         Spacer(Modifier.height(16.dp))
-
-        FieldLabel("Category")
-        CategoryDropdown(
-            selected = editedCategory,
-            onSelected = { editedCategory = it }
-        )
-
-        Spacer(Modifier.height(16.dp))
-
         FieldLabel("Record date")
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(CardWhite)
-                .clickable { showDatePicker = true }
-                .padding(horizontal = 16.dp, vertical = 16.dp)
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CardWhite)
+                .clickable { showDatePicker = true }.padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
-            Text(text = formatRecordDate(editedDateMillis), fontSize = 15.sp, color = TextPrimary)
+            Text(text = formatRecordDateMillis(editedDateMillis), fontSize = 15.sp, color = TextPrimary)
         }
 
         Spacer(Modifier.height(28.dp))
 
+        // Save Changes — always pressable; validates on press, same non-blocking pattern as Upload.
         Button(
             onClick = {
-                isSaving = true
-                val updated = record.copy(
-                    title = editedTitle.trim(),
-                    categoryName = editedCategory.name,
-                    recordDateMillis = editedDateMillis
-                )
-                viewModel.updateRecord(updated) {
-                    originalRecord = updated
-                    isSaving = false
-                }
+                val trimmedTitle = editedTitle.trim()
+                titleError = if (trimmedTitle.isBlank()) "Please enter a record title." else null
+                if (trimmedTitle.isBlank()) return@Button
+
+                viewModel.updateRecord(currentRecord, trimmedTitle, editedCategory, editedDateMillis, editedProvider.trim())
             },
-            enabled = editedTitle.isNotBlank() && hasChanges && !isSaving,
+            enabled = hasChanges,
             modifier = Modifier.fillMaxWidth().height(52.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryBlue,
-                disabledContainerColor = PrimaryBlue.copy(alpha = 0.4f)
-            ),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue, disabledContainerColor = PrimaryBlue.copy(alpha = 0.4f)),
             shape = RoundedCornerShape(26.dp)
         ) {
-            if (isSaving) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-            } else {
-                Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-            }
+            Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
 
         Spacer(Modifier.height(12.dp))
@@ -171,8 +161,8 @@ fun RecordDetailScreen(
         OutlinedButton(
             onClick = { showDeleteConfirm = true },
             modifier = Modifier.fillMaxWidth().height(52.dp),
-            border = BorderStrokeRed,
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE0483E)),
+            border = BorderStroke(1.dp, ErrorRed),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed),
             shape = RoundedCornerShape(26.dp)
         ) {
             Text("Delete Record", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
@@ -185,10 +175,7 @@ fun RecordDetailScreen(
         RecordDatePickerDialog(
             initialMillis = editedDateMillis,
             onDismiss = { showDatePicker = false },
-            onConfirm = { millis ->
-                editedDateMillis = millis
-                showDatePicker = false
-            }
+            onConfirm = { millis -> editedDateMillis = millis; showDatePicker = false }
         )
     }
 
@@ -196,72 +183,54 @@ fun RecordDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Delete this record?") },
-            text = { Text("\"${record.title}\" will be permanently deleted. This can't be undone.") },
+            text = { Text("\"${currentRecord.title}\" will be permanently deleted. This can't be undone.") },
             confirmButton = {
                 TextButton(onClick = {
-                    fileStorageHelper.deleteFile(record.fileName)
-                    viewModel.deleteRecord(record) {
-                        showDeleteConfirm = false
+                    showDeleteConfirm = false
+                    viewModel.deleteRecord(currentRecord) {
                         onDeleteComplete()
                     }
-                }) {
-                    Text("Delete", color = Color(0xFFE0483E))
-                }
+                }) { Text("Delete", color = ErrorRed) }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
-            }
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
         )
     }
 }
 
 @Composable
-fun FilePreviewPanel(
-    record: Record,
-    fileStorageHelper: FileStorageHelper
-) {
-    val isImage = record.fileType == "JPG" || record.fileType == "PNG" || record.fileType == "JPEG"
+fun FilePreviewPanel(record: Record, viewModel: RecordViewModel) {
+    val isImage = record.fileType in listOf("JPG", "JPEG", "PNG")
+    var signedUrl by remember(record.filePath) { mutableStateOf<String?>(null) }
+    var urlLoadFailed by remember(record.filePath) { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(180.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(BadgeBlueBg),
-        contentAlignment = Alignment.Center
-    ) {
+    LaunchedEffect(record.filePath, isImage) {
         if (isImage) {
-            val file = remember(record.fileName) { fileStorageHelper.getFile(record.fileName) }
-            AsyncImage(
-                model = file,
+            val url = viewModel.getSignedUrl(record.filePath)
+            if (url != null) signedUrl = url else urlLoadFailed = true
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(16.dp)).background(BadgeBlueBg), contentAlignment = Alignment.Center) {
+        when {
+            isImage && signedUrl != null -> AsyncImage(
+                model = signedUrl,
                 contentDescription = record.title,
                 modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
                 contentScale = ContentScale.Crop
             )
-        } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = record.fileType,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = PrimaryBlue
-                )
+            isImage && urlLoadFailed -> Text(
+                text = "Preview unavailable offline",
+                color = TextSecondary, fontSize = 13.sp, textAlign = TextAlign.Center,
+                modifier = Modifier.padding(16.dp)
+            )
+            isImage -> CircularProgressIndicator(color = PrimaryBlue)
+            else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = record.fileType, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = PrimaryBlue)
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    text = record.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
-                )
+                Text(text = record.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Uploaded ${formatRecordDate(record.uploadedAtMillis)}",
-                    fontSize = 13.sp,
-                    color = TextSecondary
-                )
+                Text(text = "Uploaded ${formatRecordDate(record.uploadedAt)}", fontSize = 13.sp, color = TextSecondary)
             }
         }
     }
 }
-
-private val BorderStrokeRed = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0483E))
