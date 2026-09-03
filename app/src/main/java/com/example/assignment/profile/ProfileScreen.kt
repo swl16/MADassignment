@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
@@ -88,20 +89,33 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(20.dp))
-
-            // Dynamic Avatar
-            Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
-                color = Color(0xFFE5EDFF),
-                modifier = Modifier.size(90.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = initials, // Dynamic Initials
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E50FF)
-                    )
+            // Dynamic Avatar — shows the picture if set, otherwise initials
+            if (currentUser?.profilePictureUri != null) {
+                AsyncImage(
+                    model = currentUser?.profilePictureUri,
+                    contentDescription = "Profile picture",
+                    modifier = Modifier
+                        .size(90.dp)
+                        .background(
+                            Color(0xFFE5EDFF),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        ),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            } else {
+                Surface(
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = Color(0xFFE5EDFF),
+                    modifier = Modifier.size(90.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = initials,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1E50FF)
+                        )
+                    }
                 }
             }
 
@@ -136,7 +150,12 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = "HEALTHCARE ID", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "HEALTHCARE ID",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = healthcareId, // Dynamic ID
@@ -145,29 +164,51 @@ fun ProfileScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Text(text = "Verified", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "Verified",
+                        fontSize = 12.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
-                Text(text = "Account & safety", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                Text(
+                    text = "Account & safety",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             SettingsRowItem(
-                icon = "🕒", title = "Appointment history", subtitle = "Past and upcoming appointments", iconColor = Color.Gray,
-                onClick = { onNavigateToAppointmentHistory() } )
+                icon = "🕒",
+                title = "Appointment history",
+                subtitle = "Past and upcoming appointments",
+                iconColor = Color.Gray,
+                onClick = { onNavigateToAppointmentHistory() })
             SettingsRowItem(
-                icon = "🔵", title = "Notification settings", subtitle = "Control alerts and reminders", iconColor = Color(0xFF1E50FF),
+                icon = "🔵",
+                title = "Notification settings",
+                subtitle = "Control alerts and reminders",
+                iconColor = Color(0xFF1E50FF),
                 onClick = { onNavigateToSettings() })
             SettingsRowItem(
-                icon = "➕", title = "Emergency contact", subtitle = "Manage your trusted contact", iconColor = Color(0xFF1E50FF),
+                icon = "➕",
+                title = "Emergency contact",
+                subtitle = "Manage your trusted contact",
+                iconColor = Color(0xFF1E50FF),
                 onClick = { onNavigateToEmergency() })
             SettingsRowItem(
-                icon = "🔒", title = "Change password", subtitle = "Update your account password", iconColor = Color(0xFF1E50FF),
+                icon = "🔒",
+                title = "Change password",
+                subtitle = "Update your account password",
+                iconColor = Color(0xFF1E50FF),
                 onClick = { onNavigateToChangePassword() })
 
             Spacer(modifier = Modifier.weight(1f))
@@ -188,12 +229,17 @@ fun ProfileScreen(
             // 7. The Confirmation Pop-Up
             if (showLogoutDialog) {
                 AlertDialog(
-                    onDismissRequest = { showLogoutDialog = false }, // Closes if they tap outside the box
+                    onDismissRequest = {
+                        showLogoutDialog = false
+                    }, // Closes if they tap outside the box
                     title = {
                         Text("Log out", fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
                     },
                     text = {
-                        Text("Are you sure you want to log out of your account?", color = Color.Gray)
+                        Text(
+                            "Are you sure you want to log out of your account?",
+                            color = Color.Gray
+                        )
                     },
                     confirmButton = {
                         TextButton(
@@ -296,7 +342,12 @@ fun SettingsRowItem(
                 Text(text = icon, fontSize = 18.sp, color = iconColor)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
+                    Text(
+                        text = title,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A1A1A)
+                    )
                     Text(text = subtitle, fontSize = 12.sp, color = Color.Gray)
                 }
             }

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.assignment.database.Appointment
 import com.example.assignment.database.AppointmentDao
 import com.example.assignment.database.Reminder
@@ -44,7 +45,6 @@ import com.example.assignment.viewmodel.UserViewModel
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-
 
 @Composable
 fun HomeScreen(
@@ -73,6 +73,7 @@ fun HomeScreen(
     // 3. Derive UI values directly from the state (defaults to fallback text if loading)
     val initials = currentUser?.fullName?.take(2)?.uppercase() ?: "--"
     val firstName = currentUser?.fullName?.split(" ")?.firstOrNull() ?: "User"
+    val profilePictureUri = currentUser?.profilePictureUri
 
     val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     val currentTime = LocalTime.now()
@@ -105,6 +106,7 @@ fun HomeScreen(
                 navController = navController,
                 initials = initials,
                 firstName = firstName,
+                profilePictureUri = profilePictureUri,
                 latestAppointment = latestAppointment,
                 nextMedication = nextMedication,
                 onNavigateToProfile = onNavigateToProfile,
@@ -120,6 +122,7 @@ fun HomeContent(
     navController: NavController,
     initials: String,
     firstName: String,
+    profilePictureUri: String?,
     latestAppointment: Appointment?,
     nextMedication: Reminder?,
     onNavigateToProfile: () -> Unit = {},
@@ -133,6 +136,7 @@ fun HomeContent(
     ) {
         TopHeader(
             initials = initials,
+            profilePictureUri = profilePictureUri,
             onAvatarClick = onNavigateToProfile,
             onBellClick = onNavigateToNotifications
         )
@@ -158,7 +162,8 @@ fun HomeContent(
 
 @Composable
 fun TopHeader(
-    initials: String, // <-- Accept initials
+    initials: String,
+    profilePictureUri: String? = null, // NEW
     onAvatarClick: () -> Unit = {},
     onBellClick: () -> Unit = {}
 ) {
@@ -191,19 +196,32 @@ fun TopHeader(
                 }
             }
 
-            Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
-                color = Color(0xFFE5EDFF),
-                modifier = Modifier
-                    .size(40.dp)
-                    .clickable { onAvatarClick() }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = initials, // <-- DYNAMIC INITIALS HERE!
-                        color = Color(0xFF1E50FF),
-                        fontWeight = FontWeight.Bold
-                    )
+            // CHANGED: shows the picture if set, otherwise initials
+            if (profilePictureUri != null) {
+                AsyncImage(
+                    model = profilePictureUri,
+                    contentDescription = "Profile picture",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFE5EDFF), shape = androidx.compose.foundation.shape.CircleShape)
+                        .clickable { onAvatarClick() },
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            } else {
+                Surface(
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = Color(0xFFE5EDFF),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { onAvatarClick() }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = initials,
+                            color = Color(0xFF1E50FF),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
