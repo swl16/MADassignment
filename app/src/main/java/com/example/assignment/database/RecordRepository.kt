@@ -12,7 +12,7 @@ import java.time.Instant
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
-private const val BUCKET_RECORDS = "medical-records"
+private const val BUCKET_RECORDS = "patient_records"
 
 class RecordRepository(
     private val dao: RecordDao,
@@ -73,22 +73,46 @@ class RecordRepository(
         provider: String
     ) {
         withContext(Dispatchers.IO) {
-            val (filePath, fileType) = uploadFileToStorage(username, fileUri)
+            val originalName = queryFileName(fileUri) ?: "file"
+            val extension = originalName.substringAfterLast('.', "").ifBlank { "pdf" }
+            val fileType = extension.uppercase()
+
+            val uniqueFileName = "${UUID.randomUUID()}.$extension"
+            val localFile = java.io.File(context.filesDir, uniqueFileName)
+
+            context.contentResolver.openInputStream(fileUri)?.use{ input ->
+                localFile.outputStream().use{ output ->
+                    input.copyTo(output)
+                }
+            }
+
+            val cloudPath = "$username/$uniqueFileName"
+
             val record = Record(
                 id = UUID.randomUUID().toString(),
                 username = username,
                 title = title,
                 categoryName = category.name,
-                filePath = filePath,
+                filePath = cloudPath,
                 fileType = fileType,
                 provider = provider.ifBlank { null },
                 recordDate = Instant.ofEpochMilli(recordDateMillis).toString(),
                 uploadedAt = Instant.now().toString(),
                 recordDateMillis = recordDateMillis,
                 uploadedAtMillis = System.currentTimeMillis(),
-                fileName = queryFileName(fileUri) ?: "file"
+                fileName = originalName
             )
-            saveRecord(record)
+
+            dao.insertRecord(record)
+
+            try {
+                val bytes = localFile.readBytes()
+                supabase.storage.from(BUCKET_RECORDS).upload(cloudPath, bytes)
+
+                table.upsert(record)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -105,11 +129,14 @@ class RecordRepository(
 
     suspend fun updateRecord(record: Record) {
         withContext(Dispatchers.IO) {
+            // Instantly updates the local Room database
             dao.updateRecord(record)
+
+            // Attempts cloud sync safely
             try {
                 table.update(record) { filter { eq("id", record.id) } }
             } catch (e: Exception) {
-                e.printStackTrace()
+                e.printStackTrace() // Caught safely if offline
             }
         }
     }
@@ -139,18 +166,6 @@ class RecordRepository(
         }
     }
 
-    private suspend fun uploadFileToStorage(username: String, uri: Uri): Pair<String, String> {
-        val originalName = queryFileName(uri) ?: "file"
-        val extension = originalName.substringAfterLast('.', "").ifBlank { "pdf" }
-        val fileType = extension.uppercase()
-        val path = "$username/${UUID.randomUUID()}.$extension"
-
-        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            ?: error("Could not read the selected file")
-
-        supabase.storage.from(BUCKET_RECORDS).upload(path, bytes)
-        return path to fileType
-    }
 
     fun queryFileName(uri: Uri): String? {
         var name: String? = null
