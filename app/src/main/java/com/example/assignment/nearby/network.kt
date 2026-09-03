@@ -19,7 +19,8 @@ data class Facility(
     val type: String,
     val distance: String,
     val openingHours: String,
-    val location: LatLng
+    val lat: Double,
+    val lon: Double
 )
 //data class NearbySearchRequest(
 //    val includedTypes: List<String> = listOf("hospital", "clinic", "pharmacy"),

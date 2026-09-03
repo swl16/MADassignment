@@ -2,11 +2,11 @@ package com.example.assignment.nearby
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
+import android.preference.PreferenceManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -29,17 +29,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.CancellationTokenSource
-import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,17 +52,24 @@ fun NearbyScreen(navController: NavController,
     val coroutineScope = rememberCoroutineScope()
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    var userLocation by remember { mutableStateOf<LatLng?>(null) }
+    LaunchedEffect(Unit) {
+        Configuration.getInstance().load(context, PreferenceManager.getDefaultSharedPreferences(context))
+        Configuration.getInstance().userAgentValue = context.packageName
+    }
+
+    var userLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var facilities by remember { mutableStateOf<List<Facility>>(emptyList()) }
     var selectedFacility by remember { mutableStateOf<Facility?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val defaultLocation = LatLng(3.2152, 101.7289) // Default fallback
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(defaultLocation, 14f)
-    }
+    var osmMapView by remember { mutableStateOf<MapView?>(null) }
+
+//    val defaultLocation = LatLng(3.2152, 101.7289) // Default fallback
+//    val cameraPositionState = rememberCameraPositionState {
+//        position = CameraPosition.fromLatLngZoom(defaultLocation, 14f)
+//    }
 
     fun loadPlaces(lat: Double, lng: Double) {
         coroutineScope.launch {
@@ -79,7 +88,7 @@ fun NearbyScreen(navController: NavController,
                 """.trimIndent()
 
                 val response = RetrofitClient.api.getNearbyFacilities(osmQuery)
-                val labels = listOf("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N")
+                val labels = ('A'..'Z').map { it.toString() }
 
                 val mappedList = response.elements
                     ?.filter { it.lat != null && it.lon != null && !it.tags?.name.isNullOrBlank() }
@@ -106,7 +115,8 @@ fun NearbyScreen(navController: NavController,
                             type = categoryType,
                             distance = distKm,
                             openingHours = item.tags?.openingHours ?: "Open daily",
-                            location = LatLng(placeLat, placeLng)
+                            lat = placeLat,
+                            lon = placeLng
                         )
                     } ?: emptyList()
 
@@ -127,9 +137,12 @@ fun NearbyScreen(navController: NavController,
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token)
             .addOnSuccessListener { loc ->
                 if (loc != null) {
-                    val latLng = LatLng(loc.latitude, loc.longitude)
-                    userLocation = latLng
-                    cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
+                    val currentPoint = GeoPoint(loc.latitude, loc.longitude)
+                    userLocation = currentPoint
+                    osmMapView?.controller?.apply {
+                        setZoom(15.0)
+                        animateTo(currentPoint)
+                    }
                     loadPlaces(loc.latitude, loc.longitude)
                 } else {
                     isLoading = false
@@ -154,8 +167,8 @@ fun NearbyScreen(navController: NavController,
     }
 
     LaunchedEffect(Unit) {
-        val fineGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (fineGranted) {
+        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (hasFine) {
             fetchGPS()
         } else {
             permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
@@ -200,27 +213,34 @@ fun NearbyScreen(navController: NavController,
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            GoogleMap(
+            AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(
-                    zoomControlsEnabled = false,
-                    myLocationButtonEnabled = true
-                ),
-                properties = MapProperties(isMyLocationEnabled = userLocation != null)
-            ) {
-                filteredFacilities.forEach { facility ->
-                    Marker(
-                        state = MarkerState(position = facility.location),
-                        title = "${facility.label}: ${facility.name}",
-                        snippet = "${facility.type} • ${facility.distance}",
-                        onClick = {
-                            selectedFacility = facility
-                            false
+                factory = { ctx ->
+                    MapView(ctx).apply {
+                        setTileSource(TileSourceFactory.MAPNIK)
+                        setMultiTouchControls(true)
+                        controller.setZoom(14.0)
+                        controller.setCenter(GeoPoint(3.2152, 101.7289))
+                        osmMapView = this
+                    }
+                },
+                update = { mapView ->
+                    mapView.overlays.clear()
+                    filteredFacilities.forEach { facility ->
+                        val marker = Marker(mapView).apply {
+                            position = GeoPoint(facility.lat, facility.lon)
+                            title = "${facility.label}. ${facility.name}"
+                            snippet = "${facility.type} • ${facility.distance}"
+                            setOnMarkerClickListener { _, _ ->
+                                selectedFacility = facility
+                                true
+                            }
                         }
-                    )
+                        mapView.overlays.add(marker)
+                    }
+                    mapView.invalidate()
                 }
-            }
+            )
 
             // Floating Search Bar
             OutlinedTextField(
@@ -314,9 +334,11 @@ fun NearbyScreen(navController: NavController,
                                 )
                                 .clickable {
                                     selectedFacility = facility
-                                    cameraPositionState.move(
-                                        CameraUpdateFactory.newLatLngZoom(facility.location, 14.5f)
-                                    )
+                                    val targetPoint = GeoPoint(facility.lat, facility.lon)
+                                    osmMapView?.controller?.apply {
+                                        setZoom(16.0)
+                                        animateTo(targetPoint)
+                                    }
                                 }
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
@@ -354,14 +376,14 @@ fun NearbyScreen(navController: NavController,
                 Button(
                     onClick = {
                         selectedFacility?.let { target ->
-                            val gmmIntentUri = Uri.parse("google.navigation:q=${target.location.latitude},${target.location.longitude}")
+                            val gmmIntentUri = Uri.parse("google.navigation:q=${target.lat},${target.lon}")
                             val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply {
                                 setPackage("com.google.android.apps.maps")
                             }
                             if (mapIntent.resolveActivity(context.packageManager) != null) {
                                 context.startActivity(mapIntent)
                             } else {
-                                val browserUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=${target.location.latitude},${target.location.longitude}")
+                                val browserUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lon}")
                                 context.startActivity(Intent(Intent.ACTION_VIEW, browserUri))
                             }
                         }
