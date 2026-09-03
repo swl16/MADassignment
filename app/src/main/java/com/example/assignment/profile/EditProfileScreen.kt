@@ -1,6 +1,8 @@
 package com.example.assignment.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -8,11 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -34,6 +34,7 @@ import com.example.assignment.authentication.validateDateOfBirth
 import com.example.assignment.authentication.validateEmail
 import com.example.assignment.authentication.validateFullName
 import com.example.assignment.authentication.validateMalaysianMobile
+import com.example.assignment.ui.components.ProfilePicturePicker
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
 
@@ -47,16 +48,19 @@ fun EditProfileScreen(
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var phoneField by remember { mutableStateOf(TextFieldValue("")) } // CHANGED: cursor-safe
+    var phoneField by remember { mutableStateOf(TextFieldValue("")) }
     var dob by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") } // NEW
+    var errorMessage by remember { mutableStateOf("") }
+    var profilePictureUri by remember { mutableStateOf<String?>(null) }
+    var showPicturePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentUser) {
         currentUser?.let { user ->
             fullName = user.fullName
             email = user.email
-            phoneField = TextFieldValue(user.mobileNumber) // CHANGED
+            phoneField = TextFieldValue(user.mobileNumber)
             dob = user.dateOfBirth
+            profilePictureUri = user.profilePictureUri
         }
     }
 
@@ -80,25 +84,42 @@ fun EditProfileScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(0xFFE5EDFF),
-                modifier = Modifier.size(90.dp)
+            Box(
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { showPicturePicker = true }
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(text = initials, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E50FF))
-                }
+                ProfilePicturePicker(
+                    currentImageUri = profilePictureUri,
+                    initials = initials,
+                    showDialog = showPicturePicker,
+                    onDialogDismiss = { showPicturePicker = false },
+                    onImageSelected = { uri -> profilePictureUri = uri.toString() },
+                    size = 90.dp
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Change Profile",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1A1A1A),
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { showPicturePicker = true }
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
 
             ProfileInputField(label = "Full name", value = fullName, onValueChange = { fullName = it })
             ProfileInputField(label = "Email address", value = email, onValueChange = { email = it })
 
-            // CHANGED: phone number now uses cursor-safe formatted field
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text(text = "Phone number", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
                 Spacer(modifier = Modifier.height(8.dp))
@@ -117,7 +138,7 @@ fun EditProfileScreen(
 
             ProfileInputField(label = "Date of birth", value = dob, onValueChange = { dob = it })
 
-            // NEW: inline error message
+            //inline error message
             if (errorMessage.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -146,7 +167,8 @@ fun EditProfileScreen(
                                 fullName = fullName.trim(),
                                 email = email.trim(),
                                 mobileNumber = phoneField.text.trim(),
-                                dateOfBirth = dob.trim()
+                                dateOfBirth = dob.trim(),
+                                profilePictureUri = profilePictureUri // NEW
                             )
                             viewModel.updateUserProfile(updatedUser)
                             onNavigateBack()

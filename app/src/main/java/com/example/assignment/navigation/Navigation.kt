@@ -293,7 +293,7 @@ fun AppNavigation() {
 
         composable("emergency_contact") {
             com.example.assignment.profile.EmergencyContactScreen(
-                viewModel = emergencyContactViewModel, // CHANGED
+                viewModel = emergencyContactViewModel,
                 username = activeUsername,
                 onNavigateBack = { navController.popBackStack() }
             )

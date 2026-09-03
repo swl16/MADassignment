@@ -55,8 +55,8 @@ fun EmergencyContactScreen(
 
     var fullName by remember { mutableStateOf("") }
     var relationship by remember { mutableStateOf("") }
-    var mobileField by remember { mutableStateOf(TextFieldValue("")) } // CHANGED: cursor-safe
-    var errorMessage by remember { mutableStateOf("") } // NEW
+    var mobileField by remember { mutableStateOf(TextFieldValue("")) }
+    var errorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(username) {
         viewModel.loadContact(username)
@@ -66,7 +66,7 @@ fun EmergencyContactScreen(
         existingContact?.let {
             fullName = it.fullName
             relationship = it.relationship
-            mobileField = TextFieldValue(it.mobileNumber) // CHANGED
+            mobileField = TextFieldValue(it.mobileNumber)
         }
     }
 
@@ -167,7 +167,7 @@ fun EmergencyContactScreen(
             ContactInputField(label = "Full name", value = fullName) { fullName = it }
             ContactInputField(label = "Relationship", value = relationship) { relationship = it }
 
-            // CHANGED: Mobile number now uses cursor-safe Malaysian formatting
+            //Mobile number uses Malaysian formatting
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text(
                     text = "Mobile number",
@@ -190,7 +190,7 @@ fun EmergencyContactScreen(
                 )
             }
 
-            // NEW: inline error message
+            //inline error message
             if (errorMessage.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(

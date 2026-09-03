@@ -199,7 +199,7 @@ fun ProfileScreen(
                         TextButton(
                             onClick = {
                                 showLogoutDialog = false // Hide the dialog
-                                onLogOut()               // ACTUALLY log them out!
+                                onLogOut()               // log out
                             }
                         ) {
                             Text("Yes, log out", color = Color.Red, fontWeight = FontWeight.Bold)
@@ -293,7 +293,6 @@ fun SettingsRowItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Fake Icon using text for now
                 Text(text = icon, fontSize = 18.sp, color = iconColor)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {

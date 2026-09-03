@@ -191,7 +191,7 @@ fun NotificationCard(
             }
         }
 
-        // NEW: blue dot pinned to the top-right corner of the card
+        //blue dot pinned to the top-right corner of the card
         if (isUnread) {
             Surface(
                 shape = CircleShape,
