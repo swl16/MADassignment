@@ -202,7 +202,7 @@ fun TopBar(title: String, onBackClick: () -> Unit) {
 @Composable
 fun AddReminderScreen(
     navController: NavController,
-    viewModel: ReminderViewModel
+    viewModel: ReminderViewModel, username: String
 ) {
     var medicineName by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
@@ -352,7 +352,7 @@ fun AddReminderScreen(
                         isNotificationEnabled = notificationEnable,
                         isActive = true
                     )
-                    viewModel.saveReminder(newReminder)
+                    viewModel.saveReminder(newReminder, username)
                     navController.popBackStack()
                 }
             },

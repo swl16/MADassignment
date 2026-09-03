@@ -52,7 +52,7 @@ import com.example.assignment.database.ReminderViewModel
 fun ReminderDetailsScreen(
     navController: NavController,
     viewModel: ReminderViewModel,
-    reminderId: String // Passed via navigation route
+    reminderId: String, username: String
 ) {
     // Collect the list of reminders from the ViewModel
     val reminders by viewModel.reminders.collectAsState()
@@ -190,7 +190,7 @@ fun ReminderDetailsScreen(
                         isNotificationEnabled = notificationEnabled,
                         isActive = isActive
                     )
-                    viewModel.saveReminder(updatedReminder)
+                    viewModel.saveReminder(updatedReminder, username)
                     navController.popBackStack()
                 }
             },
