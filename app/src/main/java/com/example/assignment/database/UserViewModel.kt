@@ -33,10 +33,9 @@ class UserViewModel(private val userDao: UserDao) : ViewModel() {
             } else if (existingUsername != null) {
                 _errorMessage.value = "Username is already used by others!"
             } else {
-                // 1. Save locally to Room
                 userDao.insertUser(user)
 
-                // 2. Backup to Supabase
+                // Backup to Supabase
                 try {
                     SupabaseService.client.from("users").insert(user)
                 } catch (e: Exception) {

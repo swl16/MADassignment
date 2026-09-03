@@ -41,7 +41,7 @@ import com.example.assignment.viewmodel.UserViewModel // NEW IMPORT
 @Composable
 fun HomeScreen(
     navController: NavController,
-    viewModel: UserViewModel, // CHANGED: Now takes ViewModel
+    viewModel: UserViewModel,
     loggedInUsername: String,
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {}
@@ -81,8 +81,8 @@ fun HomeScreen(
 @Composable
 fun HomeContent(
     navController: NavController,
-    initials: String, // <-- Accept initials
-    firstName: String, // <-- Accept first name
+    initials: String, //
+    firstName: String, //
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {}
 ) {
@@ -203,7 +203,7 @@ fun NextAppointmentCard() {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "NEXT APPOINTMENT", // Tweaked to all-caps like Figma
+                text = "NEXT APPOINTMENT",
                 fontSize = 12.sp,
                 fontWeight = SemiBold,
                 color = Color.White.copy(alpha = 0.8f)
@@ -211,7 +211,7 @@ fun NextAppointmentCard() {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Dr. Sarah Lim", // Updated to Figma name
+                text = "Dr. Sarah Lim",
                 fontSize = 24.sp,
                 fontWeight = Bold,
                 color = Color.White

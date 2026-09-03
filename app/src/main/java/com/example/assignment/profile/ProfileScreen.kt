@@ -52,8 +52,6 @@ fun ProfileScreen(
 ) {
     // 1. Observe the user state directly from the ViewModel
     val currentUser by viewModel.currentUser.collectAsState()
-
-    // Add this to remember if the pop-up should be visible!
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     // 2. Tell the ViewModel to fetch data (Room + Supabase) when screen opens
@@ -65,12 +63,11 @@ fun ProfileScreen(
     val displayName = currentUser?.fullName ?: "Loading..."
     val displayEmail = currentUser?.email ?: "Loading..."
 
-    // Grab the first two letters of their name for the Avatar (e.g., "Wei Li" -> "WE")
+    // Grab the first two letters of their name for the Avatar
     val initials = currentUser?.fullName?.take(2)?.uppercase() ?: "--"
 
-    // Use username as the healthcare ID base since id is gone
-    val healthcareId = "${currentUser?.username?.take(4)?.uppercase() ?: "0000"}"
-
+    // Use username as the healthcare ID
+    val healthcareId = currentUser?.username?.uppercase() ?: "0000"
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -37,7 +37,7 @@ import com.example.assignment.viewmodel.UserViewModel
 
 @Composable
 fun LoginPage(
-    viewModel: UserViewModel, // CHANGED
+    viewModel: UserViewModel,
     onNavigateToSignUp: () -> Unit = {},
     onNavigateToForgotPassword: () -> Unit = {},
     onNavigateToHome: (String) -> Unit = {}
@@ -136,7 +136,6 @@ fun LoginPage(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // NEW: Show error message if it's not empty
         if (errorMessage.isNotEmpty()) {
             Text(
                 text = errorMessage,
