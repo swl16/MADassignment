@@ -503,21 +503,6 @@ fun TodayMedicationCard(
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1A1A1A)
                         )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // 3. Mark as taken button aligned to the right
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Text(
-                                text = "Mark as taken",
-                                color = Color(0xFF1E50FF),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
             }

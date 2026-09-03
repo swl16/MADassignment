@@ -1,10 +1,5 @@
 package com.example.assignment.navigation
 
-import android.service.notification.Condition.newId
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -13,12 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -43,6 +35,7 @@ import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
 import com.example.assignment.database.Appointment
 import com.example.assignment.database.RecordRepository
+import com.example.assignment.database.ReminderRepository
 import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.nearby.NearbyScreen
@@ -54,6 +47,8 @@ import com.example.assignment.reminder.ReminderScreen
 import com.example.assignment.viewmodel.EmergencyContactViewModel
 import com.example.assignment.viewmodel.RecordViewModel
 import com.example.assignment.viewmodel.UserViewModel
+import com.example.assignment.database.AppointmentRepository
+import com.example.assignment.database.AppointmentViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -72,13 +67,24 @@ fun AppNavigation() {
     val recordDao = db.recordDao()
 
     val reminderDao = db.reminderDao()
-    val reminderRepository = remember{ com.example.assignment.database.ReminderRepository(reminderDao)}
+    val reminderRepository = remember{ ReminderRepository(reminderDao) }
 
-    val reminderViewModel: com.example.assignment.database.ReminderViewModel = viewModel(
+    val appointmentRepository = remember { AppointmentRepository(appointmentDao) }
+
+    val reminderViewModel: ReminderViewModel = viewModel(
         factory = object: ViewModelProvider.Factory{
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return com.example.assignment.database.ReminderViewModel(reminderRepository) as T
+                return ReminderViewModel(reminderRepository) as T
+            }
+        }
+    )
+
+    val appointmentViewModel: AppointmentViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AppointmentViewModel(appointmentRepository) as T
             }
         }
     )
@@ -339,7 +345,6 @@ fun AppNavigation() {
         }
 
         composable("appointment_detail") {
-            val scope = rememberCoroutineScope()
 
             val doctor = sampleDoctors.find {
                 it.name.equals(selectedAppointment?.doctorName, ignoreCase = true)
@@ -350,9 +355,7 @@ fun AppNavigation() {
                 appointment = selectedAppointment,
                 doctor = doctor,
                 onCancelAppointment = { toCancel ->
-                    scope.launch {
-                        appointmentDao.delete(toCancel)
-                    }
+                    appointmentViewModel.cancelAppointment(toCancel)
                 }
             )
         }
@@ -360,71 +363,51 @@ fun AppNavigation() {
         composable("reschedule_appointment/{appointmentId}",
             arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val appointmentId = backStackEntry.arguments?.getInt("appointmentId") ?: -1
-            val scope = rememberCoroutineScope()
+            val appointmentId = backStackEntry.arguments?.getInt("appointmentId")
+//            val scope = rememberCoroutineScope()
+            val appointment = appointments.find { it.id == appointmentId }
 
-            val appointmentState by produceState<Appointment?>(initialValue = appointments.find { it.id == appointmentId }, key1 = appointmentId) {
-                if (value == null) {
-                    // Fallback: Query directly from DB if in-memory list hasn't synced yet
-                    value = appointmentDao.getById(appointmentId) // or your DAO find method
-                }
-            }
-
-            val currentAppointment = appointmentState
-
-            if (currentAppointment == null) {
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF8FAFF)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFF1E50FF))
-                }
-            }else {
+            if (appointment != null) {
                 val matchingDoctor = sampleDoctors.find {
-                    it.name.equals(currentAppointment.doctorName, ignoreCase = true)
+                    it.name.equals(appointment.doctorName, ignoreCase = true)
                 } ?: sampleDoctors.first()
 
-                val initialDate = remember(currentAppointment.date) {
-                    try {
-                        LocalDate.parse(currentAppointment.date, DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
-                    } catch (e: Exception) {
-                        try {
-                            LocalDate.parse(currentAppointment.date, DateTimeFormatter.ISO_LOCAL_DATE)
-                        } catch (e2: Exception) {
-                            LocalDate.now()
-                        }
-                    }
+                val initialDate = try {
+                    LocalDate.parse(appointment.date, DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+                } catch (e: Exception) {
+                    LocalDate.now()
                 }
 
                 SelectDateTimeScreen(
+                    navController = navController,
+                    viewModel = appointmentViewModel,
+                    username = activeUsername,
                     doctor = matchingDoctor,
                     initialDate = initialDate,
-                    initialTime = currentAppointment.time,
+                    initialTime = appointment.time,
                     isRescheduling = true,
+                    appointmentIdToReschedule = appointment.id,
                     onNavigateBack = { navController.popBackStack() },
-                    onConfirm = { newDate, newTime ->
-                        val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
-
-                        scope.launch {
-                            val updatedAppointment = currentAppointment.copy(
-                                date = formattedDate,
-                                time = newTime
-                            )
-                            appointmentDao.update(updatedAppointment)
-
-                            val index = appointments.indexOfFirst { it.id == currentAppointment.id }
-                            if (index != -1) {
-                                appointments[index] = updatedAppointment
-                            }
-
-                            navController.navigate("booking_confirmed/${updatedAppointment.id}") {
-                                popUpTo("appointment_detail") { inclusive = false }
-                            }
-                        }
-                    }
+//                    onConfirm = { newDate, newTime ->
+//                        val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+//
+//                        val index = appointments.indexOfFirst { it.id == appointment.id }
+//                        if (index != -1) {
+//                            appointments[index] = appointment.copy(
+//                                date = formattedDate,
+//                                time = newTime
+//                            )
+//                        }
+//
+//                        scope.launch {
+//                            val updatedAppointment = appointment.copy(
+//                                date = formattedDate,
+//                                time = newTime
+//                            )
+//                            appointmentDao.update(updatedAppointment)
+//                            navController.popBackStack()
+//                        }
+//                    }
                 )
             }
         }
@@ -435,26 +418,29 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val index = backStackEntry.arguments?.getInt("doctorIndex") ?: 0
             val doctor = sampleDoctors[index]
-            val scope = rememberCoroutineScope()
+//            val scope = rememberCoroutineScope()
 
             SelectDateTimeScreen(
+                navController = navController,
+                viewModel = appointmentViewModel,
+                username = activeUsername,
                 doctor = doctor,
                 onNavigateBack = { navController.popBackStack() },
-                onConfirm = { date, time ->
-                    scope.launch {
-                        val newAppointment = Appointment(
-                            username = activeUsername,
-                            doctorName = doctor.name,
-                            specialty = doctor.specialty,
-                            date = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
-                            time = time
-                        )
-                        val newId = appointmentDao.insert(newAppointment)
-                        navController.navigate("booking_confirmed/${newId.toInt()}") {
-                            popUpTo("appointments") { inclusive = false }
-                        }
-                    }
-                }
+//                onConfirm = { date, time ->
+//                    scope.launch {
+//                        val newAppointment = Appointment(
+//                            username = activeUsername,
+//                            doctorName = doctor.name,
+//                            specialty = doctor.specialty,
+//                            date = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
+//                            time = time
+//                        )
+//                        val newId = appointmentDao.insert(newAppointment)
+//                        navController.navigate("booking_confirmed/${newId.toInt()}") {
+//                            popUpTo("appointments") { inclusive = false }
+//                        }
+//                    }
+//                }
             )
         }
 
