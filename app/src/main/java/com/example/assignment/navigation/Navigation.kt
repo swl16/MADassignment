@@ -1,5 +1,10 @@
 package com.example.assignment.navigation
 
+import android.service.notification.Condition.newId
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -8,9 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -352,45 +360,69 @@ fun AppNavigation() {
         composable("reschedule_appointment/{appointmentId}",
             arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val appointmentId = backStackEntry.arguments?.getInt("appointmentId")
+            val appointmentId = backStackEntry.arguments?.getInt("appointmentId") ?: -1
             val scope = rememberCoroutineScope()
-            val appointment = appointments.find { it.id == appointmentId }
 
-            if (appointment != null) {
+            val appointmentState by produceState<Appointment?>(initialValue = appointments.find { it.id == appointmentId }, key1 = appointmentId) {
+                if (value == null) {
+                    // Fallback: Query directly from DB if in-memory list hasn't synced yet
+                    value = appointmentDao.getById(appointmentId) // or your DAO find method
+                }
+            }
+
+            val currentAppointment = appointmentState
+
+            if (currentAppointment == null) {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF8FAFF)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFF1E50FF))
+                }
+            }else {
                 val matchingDoctor = sampleDoctors.find {
-                    it.name.equals(appointment.doctorName, ignoreCase = true)
+                    it.name.equals(currentAppointment.doctorName, ignoreCase = true)
                 } ?: sampleDoctors.first()
 
-                val initialDate = try {
-                    LocalDate.parse(appointment.date, DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
-                } catch (e: Exception) {
-                    LocalDate.now()
+                val initialDate = remember(currentAppointment.date) {
+                    try {
+                        LocalDate.parse(currentAppointment.date, DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+                    } catch (e: Exception) {
+                        try {
+                            LocalDate.parse(currentAppointment.date, DateTimeFormatter.ISO_LOCAL_DATE)
+                        } catch (e2: Exception) {
+                            LocalDate.now()
+                        }
+                    }
                 }
 
                 SelectDateTimeScreen(
                     doctor = matchingDoctor,
                     initialDate = initialDate,
-                    initialTime = appointment.time,
+                    initialTime = currentAppointment.time,
                     isRescheduling = true,
                     onNavigateBack = { navController.popBackStack() },
                     onConfirm = { newDate, newTime ->
                         val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
 
-                        val index = appointments.indexOfFirst { it.id == appointment.id }
-                        if (index != -1) {
-                            appointments[index] = appointment.copy(
-                                date = formattedDate,
-                                time = newTime
-                            )
-                        }
-
                         scope.launch {
-                            val updatedAppointment = appointment.copy(
+                            val updatedAppointment = currentAppointment.copy(
                                 date = formattedDate,
                                 time = newTime
                             )
                             appointmentDao.update(updatedAppointment)
-                            navController.popBackStack()
+
+                            val index = appointments.indexOfFirst { it.id == currentAppointment.id }
+                            if (index != -1) {
+                                appointments[index] = updatedAppointment
+                            }
+
+                            navController.navigate("booking_confirmed/${updatedAppointment.id}") {
+                                popUpTo("appointment_detail") { inclusive = false }
+                            }
                         }
                     }
                 )
