@@ -37,9 +37,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.assignment.database.Appointment
 import com.example.assignment.database.AppointmentDao
+import com.example.assignment.database.Reminder
+import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.navigation.BottomNavBar
 import com.example.assignment.viewmodel.UserViewModel
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 
@@ -47,6 +50,7 @@ import java.time.format.DateTimeFormatter
 fun HomeScreen(
     navController: NavController,
     viewModel: UserViewModel,
+    reminderViewModel: ReminderViewModel,
     loggedInUsername: String,
     appointmentDao: AppointmentDao,
     onNavigateToProfile: () -> Unit,
@@ -57,6 +61,7 @@ fun HomeScreen(
         .collectAsState(initial = emptyList())
 
     val latestAppointment = appointments.firstOrNull()
+    val reminders by reminderViewModel.reminders.collectAsState()
     // 1. Observe the user state directly from the ViewModel
     val currentUser by viewModel.currentUser.collectAsState()
 
@@ -68,6 +73,24 @@ fun HomeScreen(
     // 3. Derive UI values directly from the state (defaults to fallback text if loading)
     val initials = currentUser?.fullName?.take(2)?.uppercase() ?: "--"
     val firstName = currentUser?.fullName?.split(" ")?.firstOrNull() ?: "User"
+
+    val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+    val currentTime = LocalTime.now()
+
+    val nextMedication = reminders.filter{it.isActive}.filter{
+        reminder ->
+        try{
+            LocalTime.parse(reminder.time,timeFormatter).isAfter(currentTime)
+        }catch (e:Exception){
+            false
+        }
+    }.minByOrNull { reminder ->
+        try {
+            LocalTime.parse(reminder.time, timeFormatter)
+        }catch (e: Exception){
+            LocalTime.MAX
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFFF8FAFF),
@@ -83,6 +106,7 @@ fun HomeScreen(
                 initials = initials,
                 firstName = firstName,
                 latestAppointment = latestAppointment,
+                nextMedication = nextMedication,
                 onNavigateToProfile = onNavigateToProfile,
                 onNavigateToNotifications = onNavigateToNotifications,
                 onNavigateToAppointmentDetail = onNavigateToAppointmentDetail
@@ -97,6 +121,7 @@ fun HomeContent(
     initials: String,
     firstName: String,
     latestAppointment: Appointment?,
+    nextMedication: Reminder?,
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToAppointmentDetail: (Appointment) -> Unit = {}
