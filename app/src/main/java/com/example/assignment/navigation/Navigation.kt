@@ -35,6 +35,7 @@ import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
 import com.example.assignment.database.Appointment
 import com.example.assignment.database.RecordRepository
+import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.nearby.NearbyScreen
 import com.example.assignment.profile.EditProfileScreen
@@ -177,6 +178,7 @@ fun AppNavigation() {
                 viewModel = userViewModel,
                 loggedInUsername = activeUsername,
                 appointmentDao = appointmentDao,
+                reminderViewModel = reminderViewModel,
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
                 onNavigateToAppointmentDetail = { appointment ->

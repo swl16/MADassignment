@@ -148,7 +148,11 @@ fun HomeContent(
         Spacer(modifier = Modifier.height(10.dp))
         QuickActionsGrid(navController = navController)
         Spacer(modifier = Modifier.height(20.dp))
-        TodayMedicationCard(medicineName = null)
+
+        TodayMedicationCard(medicineName = nextMedication?.medicineName,
+            timeText = nextMedication?.time ?: "",
+            contextText = if (nextMedication != null) "${nextMedication.dosage} • ${nextMedication.instructions}" else ""
+        )
     }
 }
 
