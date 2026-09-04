@@ -31,4 +31,30 @@ interface AppointmentDao {
 
     @Delete
     suspend fun delete(appointment: Appointment)
+
+    @Query("""
+        SELECT time FROM appointments 
+        WHERE doctorName = :doctorName 
+          AND date = :date 
+          AND status != 'Canceled'
+    """)
+    fun getBookedSlotsForDoctor(doctorName: String, date: String): Flow<List<String>>
+
+    // 2. Check if a specific slot is taken (exclude current appointment ID during rescheduling)
+    @Query("""
+        SELECT EXISTS(
+            SELECT 1 FROM appointments 
+            WHERE doctorName = :doctorName 
+              AND date = :date 
+              AND time = :time 
+              AND status != 'Canceled'
+              AND (:excludeId IS NULL OR id != :excludeId)
+        )
+    """)
+    suspend fun isSlotTaken(
+        doctorName: String,
+        date: String,
+        time: String,
+        excludeId: Int? = null
+    ): Boolean
 }

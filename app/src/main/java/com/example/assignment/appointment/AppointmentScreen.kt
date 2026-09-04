@@ -52,23 +52,34 @@ import com.example.assignment.navigation.BottomNavBar
 // Doctor data class + sampleDoctors now live in DoctorData.kt (shared with DoctorProfileScreen)
 
 private val specialties = listOf("All","General", "Dental", "Cardiology", "Pediatrics", "Neurology", "More")
+private val mainCategories = listOf("General", "Dental", "Cardiology", "Pediatrics", "Neurology")
 
 // ---------- Screen ----------
 
 @Composable
 fun AppointmentMain(
     navController: NavController,
-    onBookNow: (Doctor) -> Unit = {},
+    onBookNow: (Int) -> Unit = {},
     onViewProfile: (Int) -> Unit = {} // index into sampleDoctors, passed as navArgument
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedSpecialty by remember { mutableStateOf("All") }
 
-    val filteredDoctors = remember(selectedSpecialty, sampleDoctors) {
-        if (selectedSpecialty == "All") {
-            sampleDoctors
-        } else {
-            sampleDoctors.filter { it.specialty.equals(selectedSpecialty, ignoreCase = true) }
+    val filteredDoctors = remember(searchQuery, selectedSpecialty, sampleDoctors) {
+        sampleDoctors.filter { doc ->
+            val matchesSpecialty = when (selectedSpecialty) {
+                "All" -> true
+                // If "More" is tapped, grab all doctors NOT in the main categories (e.g. Orthopedics, Dermatology)
+                "More" -> !mainCategories.any { it.equals(doc.specialty, ignoreCase = true) }
+                // Otherwise match the exact category tapped
+                else -> doc.specialty.equals(selectedSpecialty, ignoreCase = true)
+            }
+
+            val matchesSearch = searchQuery.isBlank() ||
+                    doc.name.contains(searchQuery, ignoreCase = true) ||
+                    doc.specialty.contains(searchQuery, ignoreCase = true)
+
+            matchesSpecialty && matchesSearch
         }
     }
 
@@ -171,7 +182,7 @@ fun AppointmentMain(
                         DoctorCard(
                             doctor = doctor,
                             onViewProfile = { onViewProfile(realIndex) },
-                            onBookNow = { onBookNow(doctor) }
+                            onBookNow = { onBookNow(realIndex) }
                         )
                     }
                 }

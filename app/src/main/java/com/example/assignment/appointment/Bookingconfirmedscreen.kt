@@ -25,7 +25,7 @@ import com.example.assignment.database.AppointmentDao
 fun BookingConfirmedScreen(
     appointmentId: Int,
     appointmentDao: AppointmentDao,
-    onViewNotification: () -> Unit = {},
+    onViewDetails: () -> Unit = {},
     onBackToHome: () -> Unit = {}
 ) {
     var appointment by remember { mutableStateOf<Appointment?>(null) }
@@ -109,7 +109,7 @@ fun BookingConfirmedScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             OutlinedButton(
-                onClick = onViewNotification,
+                onClick = onViewDetails,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -117,7 +117,7 @@ fun BookingConfirmedScreen(
                 colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFE5EDFF)),
                 border = null
             ) {
-                Text("View appointment notification", color = Color(0xFF1E50FF), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text("View appointment details", color = Color(0xFF1E50FF), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             }
 
             Spacer(modifier = Modifier.height(10.dp))

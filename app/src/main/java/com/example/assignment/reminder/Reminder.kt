@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.navigation.BottomNavBar
@@ -86,9 +87,8 @@ fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel, u
                             statusText = if (reminder.isActive) "Active" else "Inactive",
                             isActive = reminder.isActive,
                             onCheckedChange = { isChecked ->
-                                viewModel.saveReminder(
-                                    reminder = reminder.copy(isActive = isChecked),
-                                    username = username
+                                viewModel.updateReminder(
+                                    reminder = reminder.copy(isActive = isChecked)
                                 )
                             },
                             onClick = {
@@ -154,7 +154,7 @@ fun ReminderCardItem(
                     Text(text = dosageInfo, color = TextGray, fontSize = 14.sp)
                     Switch(
                         checked = isActive,
-                        onCheckedChange = onCheckedChange,
+                        onCheckedChange = { isChecked -> onCheckedChange(isChecked) },
                         colors = SwitchDefaults.colors(checkedTrackColor = GreenSuccess)
                     )
                 }

@@ -12,6 +12,31 @@ class AppointmentRepository(private val dao: AppointmentDao) {
         return dao.getAppointmentsForUser(username)
     }
 
+    fun getBookedSlots(doctorName: String, date: String): Flow<List<String>> {
+        return dao.getBookedSlotsForDoctor(doctorName, date)
+    }
+
+    suspend fun isSlotTaken(doctorName: String, date: String, time: String, excludeId: Int? = null): Boolean {
+        return dao.isSlotTaken(doctorName, date, time, excludeId)
+    }
+
+    suspend fun syncDoctorSchedule(doctorName: String, date: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val remoteSlots = table.select {
+                    filter {
+                        eq("doctorName", doctorName)
+                        eq("date", date)
+                        neq("status", "Canceled")
+                    }
+                }.decodeList<Appointment>()
+                dao.insertAppointments(remoteSlots)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     suspend fun syncFromRemote(username: String) {
         withContext(Dispatchers.IO) {
             try {

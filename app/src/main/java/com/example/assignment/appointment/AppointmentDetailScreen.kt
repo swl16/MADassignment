@@ -161,7 +161,7 @@ fun AppointmentDetailScreen(
 
                         Column {
                             Text(
-                                text = "Dr. ${appointment.doctorName}",
+                                text = doctor.name,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0F1F38)

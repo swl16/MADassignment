@@ -11,10 +11,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,6 +45,10 @@ import com.example.assignment.authentication.validateMalaysianMobile
 import com.example.assignment.ui.components.ProfilePicturePicker
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun EditProfileScreen(
@@ -53,6 +65,16 @@ fun EditProfileScreen(
     var errorMessage by remember { mutableStateOf("") }
     var profilePictureUri by remember { mutableStateOf<String?>(null) }
     var showPicturePicker by remember { mutableStateOf(false) }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            // Disable future dates for Date of Birth
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= System.currentTimeMillis()
+            }
+        }
+    )
 
     LaunchedEffect(currentUser) {
         currentUser?.let { user ->
@@ -127,7 +149,7 @@ fun EditProfileScreen(
                     value = phoneField,
                     onValueChange = { input -> phoneField = formatMalaysianMobile(input) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = appTextFieldColors(Color.White),
+                    colors = appTextFieldColors(Color(0xFFE5EDFF)),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -136,7 +158,40 @@ fun EditProfileScreen(
                 )
             }
 
-            ProfileInputField(label = "Date of birth", value = dob, onValueChange = { dob = it })
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Text(text = "Date of birth", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A1A))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    TextField(
+                        value = dob,
+                        onValueChange = {},
+                        readOnly = true,
+                        placeholder = { Text("DD/MM/YYYY", color = Color(0xFF8DA6FF)) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Select Date",
+                                tint = Color(0xFF3B67E9)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appTextFieldColors(Color(0xFFE5EDFF)),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
+
+                    // Touch overlay to trigger date picker
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { showDatePicker = true }
+                    )
+                }
+            }
 
             //inline error message
             if (errorMessage.isNotEmpty()) {
@@ -186,6 +241,36 @@ fun EditProfileScreen(
             }
         }
     }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+                                timeZone = TimeZone.getTimeZone("UTC")
+                            }
+                            dob = formatter.format(Date(millis))
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK", color = Color(0xFF1E50FF), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", color = Color.Gray)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+
 }
 
 @Composable
@@ -197,7 +282,7 @@ fun ProfileInputField(label: String, value: String, onValueChange: (String) -> U
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            colors = appTextFieldColors(Color.White),
+            colors = appTextFieldColors(Color(0xFFE5EDFF)),
             shape = RoundedCornerShape(12.dp)
         )
     }
