@@ -205,7 +205,7 @@ fun AppNavigation() {
                 navController = navController,
                 viewModel = userViewModel,
                 loggedInUsername = activeUsername,
-                appointmentDao = appointmentDao,
+                appointmentViewModel = appointmentViewModel,
                 reminderViewModel = reminderViewModel,
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
@@ -352,7 +352,7 @@ fun AppNavigation() {
                     selectedAppointment = appointment
                     navController.navigate("appointment_detail")
                 },
-                appointmentDao = appointmentDao,
+                appointmentViewModel = appointmentViewModel,
                 username = activeUsername
             )
         }

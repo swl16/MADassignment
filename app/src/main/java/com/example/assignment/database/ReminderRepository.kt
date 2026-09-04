@@ -39,6 +39,20 @@ class ReminderRepository(private val dao: ReminderDao) {
         }
     }
 
+    suspend fun updateReminder(reminder: Reminder) {
+        withContext(Dispatchers.IO) {
+            // Instantly update the local Room DB so the UI toggles immediately
+            dao.insertReminder(reminder)
+
+            // Explicitly tell Supabase to update the existing row
+            try {
+                table.update(reminder) { filter { eq("id", reminder.id) } }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 
     suspend fun deleteReminder(id: Int) {
         withContext(Dispatchers.IO) {

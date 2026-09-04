@@ -197,7 +197,7 @@ fun ReminderDetailsScreen(
                         isNotificationEnabled = notificationEnabled,
                         isActive = isActive
                     )
-                    viewModel.saveReminder(updatedReminder, username)
+                    viewModel.updateReminder(updatedReminder)
                     navController.popBackStack()
                 }
             },

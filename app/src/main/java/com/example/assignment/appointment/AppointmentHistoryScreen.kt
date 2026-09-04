@@ -20,8 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 import com.example.assignment.database.Appointment
-import com.example.assignment.database.AppointmentDao
-import com.example.assignment.database.UserDao
+import com.example.assignment.database.AppointmentViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,12 +28,16 @@ fun AppointmentHistoryScreen(
     onBack: () -> Unit,
     onAppointmentClick: (Appointment) -> Unit = {},
     onBookAppointment: () -> Unit = {},
-    appointmentDao: AppointmentDao? = null,
+    appointmentViewModel: AppointmentViewModel,
     username: String = "" // <-- NEW: Accept the username
 ) {
     // 1. Fetch data from DB
-    val appointments by produceState<List<Appointment>>(initialValue = emptyList(), username) {
-        appointmentDao?.getAppointmentsForUser(username)?.collect { value = it }
+    val appointments by appointmentViewModel.appointments.collectAsState()
+
+    LaunchedEffect(username){
+        if(username.isNotBlank()){
+            appointmentViewModel.loadAppointments(username)
+        }
     }
 
     val upcoming = appointments.filter { it.status == "Upcoming" }
@@ -230,9 +233,3 @@ fun AppointmentHistoryCard(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun AppointmentHistoryPreview() {
-    // Provide an empty list or mock data for preview
-    AppointmentHistoryScreen(onBack = {})
-}
