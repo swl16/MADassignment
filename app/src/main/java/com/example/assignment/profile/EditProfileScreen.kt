@@ -49,6 +49,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import androidx.compose.ui.platform.LocalContext
+
 
 @Composable
 fun EditProfileScreen(
@@ -57,6 +59,7 @@ fun EditProfileScreen(
     onNavigateBack: () -> Unit
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
+    val context = LocalContext.current
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -119,7 +122,14 @@ fun EditProfileScreen(
                     initials = initials,
                     showDialog = showPicturePicker,
                     onDialogDismiss = { showPicturePicker = false },
-                    onImageSelected = { uri -> profilePictureUri = uri.toString() },
+                    onImageSelected = { uri ->
+                        viewModel.uploadProfilePicture(
+                            context = context,
+                            uri = uri,
+                            username = username
+                        )
+                        showPicturePicker = false
+                    },
                     size = 90.dp
                 )
             }

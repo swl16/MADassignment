@@ -14,8 +14,8 @@ interface ReminderDao {
     suspend fun insertReminders(reminders: List<Reminder>) // For bulk syncing from cloud
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertReminder(reminder: Reminder): Long// For saving a single item
+    suspend fun insertReminder(reminder: Reminder)// For saving a single item
 
     @Query("DELETE FROM reminders WHERE id = :id")
-    suspend fun deleteReminder(id: Int)
+    suspend fun deleteReminder(id: String)
 }

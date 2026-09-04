@@ -3,13 +3,14 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 @Entity(tableName = "reminders")
 @Serializable
 data class Reminder(
     @PrimaryKey(autoGenerate = true)
     @SerialName("id")
-    val id: Int = 0,
+    val id: String = UUID.randomUUID().toString(),
 
     @SerialName("username")
     val username: String = "",

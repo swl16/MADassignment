@@ -235,9 +235,9 @@ fun AppNavigation() {
 
         composable(
             route = "reminder_details/{documentId}",
-            arguments = listOf(navArgument("documentId") { type = NavType.IntType })
+            arguments = listOf(navArgument("documentId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val docId = backStackEntry.arguments?.getInt("documentId") ?: 0
+            val docId = backStackEntry.arguments?.getString("documentId") ?: ""
             ReminderDetailsScreen(navController, reminderViewModel, docId, username = activeUsername)
         }
 
