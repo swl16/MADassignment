@@ -1,14 +1,20 @@
 package com.example.assignment.viewmodel
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.assignment.database.SupabaseService
 import com.example.assignment.database.User
 import com.example.assignment.database.UserDao
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
+import java.util.UUID
 
 class UserViewModel(private val userDao: UserDao) : ViewModel() {
 
@@ -203,4 +209,56 @@ class UserViewModel(private val userDao: UserDao) : ViewModel() {
             }
         }
     }
+
+    fun uploadProfilePicture(context: Context, uri: Uri, username: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Create a permanent local copy for offline use
+                val extension = "jpg" // Standardize image extension
+                val uniqueFileName = "profile_${UUID.randomUUID()}.$extension"
+                val localFile = File(context.filesDir, uniqueFileName)
+
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    localFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                // Instantly update Room DB and UI with the local offline path
+                val currentUserLocal = userDao.getUserByUsername(username)
+                if (currentUserLocal != null) {
+                    val localUpdatedUser = currentUserLocal.copy(profilePictureUri = localFile.absolutePath)
+                    userDao.updateUser(localUpdatedUser)
+                    _currentUser.value = localUpdatedUser // Triggers UI redraw instantly
+
+                    // Upload the physical file to the Supabase Storage Bucket
+                    val cloudPath = "$username/$uniqueFileName"
+                    val bytes = localFile.readBytes()
+                    val bucket = SupabaseService.client.storage.from("profile_pictures")
+
+                    bucket.upload(cloudPath, bytes)
+
+                    // 4. Get the public URL and update both databases
+                    val publicUrl = bucket.publicUrl(cloudPath)
+                    val finalUpdatedUser = localUpdatedUser.copy(profilePictureUri = publicUrl)
+
+                    // Update Local Room DB with Cloud URL
+                    userDao.updateUser(finalUpdatedUser)
+                    _currentUser.value = finalUpdatedUser
+
+                    // Sync the text URL to the Supabase PostgreSQL users table
+                    SupabaseService.client.from("users").update(finalUpdatedUser) {
+                        filter { eq("username", username) }
+                    }
+                }
+            } catch (e: Exception) {
+                // If offline, the app catches this silently.
+                // The local absolutePath remains saved in Room, so the UI still shows the new image.
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+
 }

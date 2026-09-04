@@ -27,11 +27,9 @@ class ReminderRepository(private val dao: ReminderDao) {
 
     suspend fun saveReminder(reminder: Reminder) {
         withContext(Dispatchers.IO) {
-            val newId = dao.insertReminder(reminder) // Save locally first for instant feedback
-
-            val reminderWithId = reminder.copy(id = newId.toInt())
+            dao.insertReminder(reminder)
             try {
-                table.upsert(reminderWithId) // 'Upsert' inserts if new, updates if existing
+                table.upsert(reminder) // 'Upsert' inserts if new, updates if existing
             } catch (e: Exception) {
                 // If offline, the item stays in Room and can be synced later
                 e.printStackTrace()
@@ -54,7 +52,7 @@ class ReminderRepository(private val dao: ReminderDao) {
     }
 
 
-    suspend fun deleteReminder(id: Int) {
+    suspend fun deleteReminder(id: String) {
         withContext(Dispatchers.IO) {
             dao.deleteReminder(id)
 

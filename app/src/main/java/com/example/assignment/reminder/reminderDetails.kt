@@ -57,7 +57,7 @@ import com.example.assignment.database.ReminderViewModel
 fun ReminderDetailsScreen(
     navController: NavController,
     viewModel: ReminderViewModel,
-    reminderId: Int, username: String
+    reminderId: String, username: String
 ) {
     // Collect the list of reminders from the ViewModel
     val reminders by viewModel.reminders.collectAsState()
@@ -189,6 +189,7 @@ fun ReminderDetailsScreen(
                 if(isNameValid && isTimeValid) {
                     val updatedReminder = Reminder(
                         id = reminderId, // Keep the same document ID to update, not create new
+                        username = username,
                         medicineName = medicineName,
                         dosage = dosage,
                         frequency = frequency,
