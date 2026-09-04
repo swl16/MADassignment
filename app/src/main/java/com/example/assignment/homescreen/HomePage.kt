@@ -163,7 +163,7 @@ fun HomeContent(
 @Composable
 fun TopHeader(
     initials: String,
-    profilePictureUri: String? = null, // NEW
+    profilePictureUri: String? = null, 
     onAvatarClick: () -> Unit = {},
     onBellClick: () -> Unit = {}
 ) {
@@ -196,7 +196,7 @@ fun TopHeader(
                 }
             }
 
-            // CHANGED: shows the picture if set, otherwise initials
+            // shows the picture if set, otherwise initials
             if (profilePictureUri != null) {
                 AsyncImage(
                     model = profilePictureUri,
@@ -352,7 +352,6 @@ fun QuickActionCard(
 ) {
     Card(
         onClick = onClick,
-        // THE FIX: Chain .height() to the modifier to force it to be taller!
         modifier = modifier.height(90.dp).clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
@@ -442,7 +441,7 @@ fun QuickActionsGrid(navController: NavController) {
 
 @Composable
 fun TodayMedicationCard(
-    medicineName: String?, // The "?" means this can be null!
+    medicineName: String?,
     timeText: String = "",
     contextText: String = ""
 ) {
@@ -470,7 +469,6 @@ fun TodayMedicationCard(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                // THE FIX: IntrinsicSize.Min lets the green line match the exact text height
                 Row(modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
 
                     // 1. The Green Line
