@@ -8,7 +8,7 @@ import java.util.UUID
 @Entity(tableName = "reminders")
 @Serializable
 data class Reminder(
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey
     @SerialName("id")
     val id: String = UUID.randomUUID().toString(),
 
