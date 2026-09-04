@@ -17,5 +17,5 @@ interface ReminderDao {
     suspend fun insertReminder(reminder: Reminder) // For saving a single item
 
     @Query("DELETE FROM reminders WHERE id = :id")
-    suspend fun deleteReminder(id: String)
+    suspend fun deleteReminder(id: Int)
 }

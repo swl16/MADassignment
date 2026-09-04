@@ -7,9 +7,9 @@ import kotlinx.serialization.Serializable
 @Entity(tableName = "reminders")
 @Serializable
 data class Reminder(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
     @SerialName("id")
-    val id: String = java.util.UUID.randomUUID().toString(),
+    val id: Int = 0,
 
     @SerialName("username")
     val username: String = "",
