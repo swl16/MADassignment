@@ -57,37 +57,37 @@ class RecordViewModel(private val repository: RecordRepository) : ViewModel() {
     fun getFileSize(uri: Uri): Long? = repository.queryFileSize(uri)
 
     fun uploadRecord(
-        fileUri: Uri,
+        fileUri: android.net.Uri,
         title: String,
         category: RecordCategory,
         recordDateMillis: Long,
         provider: String,
-        onComplete: () -> Unit = {}
+        onComplete: () -> Unit
     ) {
-        if (currentUsername.isBlank()) return
         viewModelScope.launch {
-            repository.uploadRecord(currentUsername, fileUri, title, category, recordDateMillis, provider)
-            onComplete()
-        }
-    }
+            try {
+                android.util.Log.d("SupabaseDebug", "1. Starting uploadRecord in ViewModel...")
 
-    fun updateRecord(
-        record: Record,
-        newTitle: String,
-        newCategory: RecordCategory,
-        newDateMillis: Long,
-        newProvider: String?
-    ) {
-        viewModelScope.launch {
-            val updated = record.copy(
-                title = newTitle,
-                categoryName = newCategory.name,
-                recordDateMillis = newDateMillis,
-                recordDate = Instant.ofEpochMilli(newDateMillis).toString(),
-                provider = newProvider
-            )
-            repository.updateRecord(updated)
-            _selectedRecord.value = updated
+                // Check username state
+                val currentUsername = currentUsername // or whatever variable holds your current username
+                android.util.Log.d("SupabaseDebug", "Current username is: '$currentUsername'")
+
+                repository.uploadRecord(
+                    username = currentUsername,
+                    fileUri = fileUri,
+                    title = title,
+                    category = category,
+                    recordDateMillis = recordDateMillis,
+                    provider = provider
+                )
+
+                android.util.Log.d("SupabaseDebug", "2. Upload completed successfully!")
+            } catch (e: Exception) {
+                android.util.Log.e("SupabaseError", "Error during upload: ${e.message}", e)
+            } finally {
+                // Guarantees screen navigation happens ONLY after the coroutine finishes
+                onComplete()
+            }
         }
     }
 

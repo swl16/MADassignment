@@ -35,6 +35,7 @@ import com.example.assignment.authentication.StartingScreen
 import com.example.assignment.database.AppDatabase
 import com.example.assignment.database.Appointment
 import com.example.assignment.database.RecordRepository
+import com.example.assignment.database.ReminderRepository
 import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.homescreen.HomeScreen
 import com.example.assignment.nearby.NearbyScreen
@@ -46,6 +47,8 @@ import com.example.assignment.reminder.ReminderScreen
 import com.example.assignment.viewmodel.EmergencyContactViewModel
 import com.example.assignment.viewmodel.RecordViewModel
 import com.example.assignment.viewmodel.UserViewModel
+import com.example.assignment.database.AppointmentRepository
+import com.example.assignment.database.AppointmentViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -64,13 +67,24 @@ fun AppNavigation() {
     val recordDao = db.recordDao()
 
     val reminderDao = db.reminderDao()
-    val reminderRepository = remember{ com.example.assignment.database.ReminderRepository(reminderDao)}
+    val reminderRepository = remember{ ReminderRepository(reminderDao) }
 
-    val reminderViewModel: com.example.assignment.database.ReminderViewModel = viewModel(
+    val appointmentRepository = remember { AppointmentRepository(appointmentDao) }
+
+    val reminderViewModel: ReminderViewModel = viewModel(
         factory = object: ViewModelProvider.Factory{
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return com.example.assignment.database.ReminderViewModel(reminderRepository) as T
+                return ReminderViewModel(reminderRepository) as T
+            }
+        }
+    )
+
+    val appointmentViewModel: AppointmentViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AppointmentViewModel(appointmentRepository) as T
             }
         }
     )
@@ -331,7 +345,6 @@ fun AppNavigation() {
         }
 
         composable("appointment_detail") {
-            val scope = rememberCoroutineScope()
 
             val doctor = sampleDoctors.find {
                 it.name.equals(selectedAppointment?.doctorName, ignoreCase = true)
@@ -342,9 +355,7 @@ fun AppNavigation() {
                 appointment = selectedAppointment,
                 doctor = doctor,
                 onCancelAppointment = { toCancel ->
-                    scope.launch {
-                        appointmentDao.delete(toCancel)
-                    }
+                    appointmentViewModel.cancelAppointment(toCancel)
                 }
             )
         }
@@ -353,7 +364,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
         ) { backStackEntry ->
             val appointmentId = backStackEntry.arguments?.getInt("appointmentId")
-            val scope = rememberCoroutineScope()
+//            val scope = rememberCoroutineScope()
             val appointment = appointments.find { it.id == appointmentId }
 
             if (appointment != null) {
@@ -368,31 +379,35 @@ fun AppNavigation() {
                 }
 
                 SelectDateTimeScreen(
+                    navController = navController,
+                    viewModel = appointmentViewModel,
+                    username = activeUsername,
                     doctor = matchingDoctor,
                     initialDate = initialDate,
                     initialTime = appointment.time,
                     isRescheduling = true,
+                    appointmentIdToReschedule = appointment.id,
                     onNavigateBack = { navController.popBackStack() },
-                    onConfirm = { newDate, newTime ->
-                        val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
-
-                        val index = appointments.indexOfFirst { it.id == appointment.id }
-                        if (index != -1) {
-                            appointments[index] = appointment.copy(
-                                date = formattedDate,
-                                time = newTime
-                            )
-                        }
-
-                        scope.launch {
-                            val updatedAppointment = appointment.copy(
-                                date = formattedDate,
-                                time = newTime
-                            )
-                            appointmentDao.update(updatedAppointment)
-                            navController.popBackStack()
-                        }
-                    }
+//                    onConfirm = { newDate, newTime ->
+//                        val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+//
+//                        val index = appointments.indexOfFirst { it.id == appointment.id }
+//                        if (index != -1) {
+//                            appointments[index] = appointment.copy(
+//                                date = formattedDate,
+//                                time = newTime
+//                            )
+//                        }
+//
+//                        scope.launch {
+//                            val updatedAppointment = appointment.copy(
+//                                date = formattedDate,
+//                                time = newTime
+//                            )
+//                            appointmentDao.update(updatedAppointment)
+//                            navController.popBackStack()
+//                        }
+//                    }
                 )
             }
         }
@@ -403,26 +418,29 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val index = backStackEntry.arguments?.getInt("doctorIndex") ?: 0
             val doctor = sampleDoctors[index]
-            val scope = rememberCoroutineScope()
+//            val scope = rememberCoroutineScope()
 
             SelectDateTimeScreen(
+                navController = navController,
+                viewModel = appointmentViewModel,
+                username = activeUsername,
                 doctor = doctor,
                 onNavigateBack = { navController.popBackStack() },
-                onConfirm = { date, time ->
-                    scope.launch {
-                        val newAppointment = Appointment(
-                            username = activeUsername,
-                            doctorName = doctor.name,
-                            specialty = doctor.specialty,
-                            date = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
-                            time = time
-                        )
-                        val newId = appointmentDao.insert(newAppointment)
-                        navController.navigate("booking_confirmed/${newId.toInt()}") {
-                            popUpTo("appointments") { inclusive = false }
-                        }
-                    }
-                }
+//                onConfirm = { date, time ->
+//                    scope.launch {
+//                        val newAppointment = Appointment(
+//                            username = activeUsername,
+//                            doctorName = doctor.name,
+//                            specialty = doctor.specialty,
+//                            date = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
+//                            time = time
+//                        )
+//                        val newId = appointmentDao.insert(newAppointment)
+//                        navController.navigate("booking_confirmed/${newId.toInt()}") {
+//                            popUpTo("appointments") { inclusive = false }
+//                        }
+//                    }
+//                }
             )
         }
 

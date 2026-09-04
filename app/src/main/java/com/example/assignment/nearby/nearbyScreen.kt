@@ -1,5 +1,4 @@
 package com.example.assignment.nearby
-
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -39,6 +38,7 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -53,8 +53,10 @@ fun NearbyScreen(navController: NavController,
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     LaunchedEffect(Unit) {
+        Configuration.getInstance().userAgentValue = "MyHealthCareApp-Assignment/1.0 (student@assignment.local)"
+
+        // 2. Load SharedPreferences configuration
         Configuration.getInstance().load(context, PreferenceManager.getDefaultSharedPreferences(context))
-        Configuration.getInstance().userAgentValue = context.packageName
     }
 
     var userLocation by remember { mutableStateOf<GeoPoint?>(null) }
@@ -77,12 +79,12 @@ fun NearbyScreen(navController: NavController,
             errorMessage = null
             try {
                 val osmQuery = """
-                    [out:json][timeout:25];
+                    [out:json][timeout:40];
                     (
-                      node["amenity"="hospital"](around:5000,$lat,$lng);
-                      node["amenity"="clinic"](around:5000,$lat,$lng);
-                      node["amenity"="doctors"](around:5000,$lat,$lng);
-                      node["amenity"="pharmacy"](around:5000,$lat,$lng);
+                      node["amenity"="hospital"](around:3000,$lat,$lng);
+                      node["amenity"="clinic"](around:3000,$lat,$lng);
+                      node["amenity"="doctors"](around:3000,$lat,$lng);
+                      node["amenity"="pharmacy"](around:3000,$lat,$lng);
                     );
                     out body;
                 """.trimIndent()
@@ -216,13 +218,34 @@ fun NearbyScreen(navController: NavController,
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
+                    val cleanTileSource = XYTileSource(
+                        "OpenTopoMap",
+                        0,
+                        17,
+                        256,
+                        ".png",
+                        arrayOf(
+                            "https://a.tile.opentopomap.org/",
+                            "https://b.tile.opentopomap.org/",
+                            "https://c.tile.opentopomap.org/"
+                        )
+                    )
+
                     MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
+                        setTileSource(cleanTileSource)
                         setMultiTouchControls(true)
-                        controller.setZoom(14.0)
-                        controller.setCenter(GeoPoint(3.2152, 101.7289))
+                        controller.setZoom(15.0)
+                        controller.setCenter(userLocation ?: GeoPoint(3.2152, 101.7289))
                         osmMapView = this
                     }
+
+//                    MapView(ctx).apply {
+//                        setTileSource(TileSourceFactory.MAPNIK)
+//                        setMultiTouchControls(true)
+//                        controller.setZoom(15.0)
+//                        controller.setCenter(GeoPoint(3.2152, 101.7289))
+//                        osmMapView = this
+//                    }
                 },
                 update = { mapView ->
                     mapView.overlays.clear()
@@ -409,7 +432,7 @@ fun NearbyScreen(navController: NavController,
 
 @Preview(showBackground = true)
 @Composable
-fun AppointmentDetailPreview() {
+fun NearbyScreenPreview() {
     // Provide an empty list or mock data for preview
     NearbyScreen(navController = rememberNavController())
 

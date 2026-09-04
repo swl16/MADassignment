@@ -42,8 +42,6 @@ fun UploadRecordScreen(
     var isUploading by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    // Requirement #2: errors only appear AFTER the user presses Upload, not while typing —
-    // otherwise every field shows red before they've had a chance to fill it in.
     var fileError by remember { mutableStateOf<String?>(null) }
     var titleError by remember { mutableStateOf<String?>(null) }
 
@@ -53,7 +51,7 @@ fun UploadRecordScreen(
         if (uri != null) {
             selectedFileUri = uri
             selectedFileDisplayName = viewModel.getFileName(uri)
-            fileError = null // clear any previous "please choose a file" error once they pick one
+            fileError = null
         }
     }
 
@@ -61,7 +59,7 @@ fun UploadRecordScreen(
         Spacer(Modifier.height(20.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBackClick) {
+            IconButton(onClick = onBackClick, enabled = !isUploading) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Text(text = "Upload Record", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
@@ -69,13 +67,14 @@ fun UploadRecordScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // Upload dropzone
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp)
                 .background(BadgeBlueBg, RoundedCornerShape(16.dp))
-                .clickable { filePickerLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) },
+                .clickable(enabled = !isUploading) {
+                    filePickerLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png"))
+                },
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -86,8 +85,7 @@ fun UploadRecordScreen(
                 Text(text = "PDF, JPG or PNG • Maximum 10 MB", fontSize = 12.sp, color = TextSecondary)
             }
         }
-        // Requirement #2 + #3: shows either "please choose a file" or a specific
-        // type/size rejection message, right under the dropzone.
+
         if (fileError != null) {
             Text(text = fileError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
         }
@@ -101,6 +99,7 @@ fun UploadRecordScreen(
             placeholder = { Text("e.g. Blood Test Report", color = TextSecondary) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            enabled = !isUploading,
             isError = titleError != null,
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -114,7 +113,7 @@ fun UploadRecordScreen(
 
         Spacer(Modifier.height(16.dp))
         FieldLabel("Category")
-        CategoryDropdown(selected = selectedCategory, onSelected = { selectedCategory = it })
+        CategoryDropdown(selected = selectedCategory, enabled = !isUploading, onSelected = { selectedCategory = it })
 
         Spacer(Modifier.height(16.dp))
         FieldLabel("Doctor / Clinic (optional)")
@@ -124,6 +123,7 @@ fun UploadRecordScreen(
             placeholder = { Text("e.g. Dr. Sarah Lim", color = TextSecondary) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            enabled = !isUploading,
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = CardWhite, focusedContainerColor = CardWhite,
@@ -135,27 +135,23 @@ fun UploadRecordScreen(
         FieldLabel("Record date")
         Box(
             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CardWhite)
-                .clickable { showDatePicker = true }.padding(horizontal = 16.dp, vertical = 16.dp)
+                .clickable(enabled = !isUploading) { showDatePicker = true }.padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
             Text(text = formatRecordDateMillis(recordDateMillis), fontSize = 15.sp, color = TextPrimary)
         }
 
         Spacer(Modifier.height(28.dp))
 
-        // Requirement #2: button is ALWAYS pressable (not disabled by isFormValid anymore).
-        // Pressing it with missing/invalid input shows inline errors instead of doing nothing.
         Button(
             onClick = {
                 val uri = selectedFileUri
                 val trimmedTitle = recordTitle.trim()
 
-                // --- Requirement #2: required-field checks ---
                 fileError = if (uri == null) "Please choose a file to upload." else null
                 titleError = if (trimmedTitle.isBlank()) "Please enter a record title." else null
 
-                if (uri == null || trimmedTitle.isBlank()) return@Button // stop here, errors are now visible
+                if (uri == null || trimmedTitle.isBlank()) return@Button
 
-                // --- Requirement #3: file type check (defense in depth beyond the picker's MIME filter) ---
                 val displayName = selectedFileDisplayName ?: ""
                 val extension = displayName.substringAfterLast('.', "").lowercase()
                 if (extension !in ALLOWED_EXTENSIONS) {
@@ -163,7 +159,6 @@ fun UploadRecordScreen(
                     return@Button
                 }
 
-                // --- Requirement #3: file size check ---
                 val fileSize = viewModel.getFileSize(uri)
                 if (fileSize != null && fileSize > MAX_FILE_SIZE_BYTES) {
                     fileError = "File is too large (${fileSize / (1024 * 1024)} MB). Maximum size is 10 MB."
@@ -171,17 +166,32 @@ fun UploadRecordScreen(
                 }
 
                 isUploading = true
-                viewModel.uploadRecord(uri, trimmedTitle, selectedCategory, recordDateMillis, providerName.trim())
-                isUploading = false
-                onUploadComplete()
+                viewModel.uploadRecord(
+                    fileUri = uri,
+                    title = trimmedTitle,
+                    category = selectedCategory,
+                    recordDateMillis = recordDateMillis,
+                    provider = providerName.trim(),
+                    onComplete = {
+                        isUploading = false
+                        onUploadComplete()
+                    }
+                )
             },
-            enabled = !isUploading, // only disabled WHILE uploading — never disabled due to empty fields
+            enabled = !isUploading,
             modifier = Modifier.fillMaxWidth().height(52.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue, disabledContainerColor = PrimaryBlue.copy(alpha = 0.4f)),
             shape = RoundedCornerShape(26.dp)
         ) {
-            if (isUploading) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-            else Text("Upload record", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            if (isUploading) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Uploading to Supabase...", fontSize = 15.sp, color = Color.White)
+                }
+            } else {
+                Text("Upload record", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
 
         Spacer(Modifier.height(20.dp))
@@ -203,13 +213,14 @@ fun FieldLabel(text: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryDropdown(selected: RecordCategory, onSelected: (RecordCategory) -> Unit) {
+fun CategoryDropdown(selected: RecordCategory, enabled: Boolean, onSelected: (RecordCategory) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+    ExposedDropdownMenuBox(expanded = expanded && enabled, onExpandedChange = { if (enabled) expanded = it }) {
         OutlinedTextField(
             value = selected.displayName,
             onValueChange = {},
             readOnly = true,
+            enabled = enabled,
             modifier = Modifier.fillMaxWidth().menuAnchor(),
             trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = TextSecondary) },
             shape = RoundedCornerShape(14.dp),
@@ -218,7 +229,7 @@ fun CategoryDropdown(selected: RecordCategory, onSelected: (RecordCategory) -> U
                 unfocusedBorderColor = Color.Transparent, focusedBorderColor = PrimaryBlue
             )
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ExposedDropdownMenu(expanded = expanded && enabled, onDismissRequest = { expanded = false }) {
             RecordCategory.entries.forEach { category ->
                 DropdownMenuItem(text = { Text(category.displayName) }, onClick = { onSelected(category); expanded = false })
             }

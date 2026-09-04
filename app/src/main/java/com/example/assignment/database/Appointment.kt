@@ -2,8 +2,10 @@ package com.example.assignment.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 @Entity(tableName = "appointments")
+@Serializable
 data class Appointment(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,

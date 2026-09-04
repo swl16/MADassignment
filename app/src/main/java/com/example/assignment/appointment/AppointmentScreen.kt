@@ -1,10 +1,13 @@
 package com.example.assignment.appointment
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,7 +51,7 @@ import com.example.assignment.navigation.BottomNavBar
 
 // Doctor data class + sampleDoctors now live in DoctorData.kt (shared with DoctorProfileScreen)
 
-private val specialties = listOf("General", "Dental", "Cardiology", "More")
+private val specialties = listOf("All","General", "Dental", "Cardiology", "Pediatrics", "Neurology", "More")
 
 // ---------- Screen ----------
 
@@ -57,22 +62,14 @@ fun AppointmentMain(
     onViewProfile: (Int) -> Unit = {} // index into sampleDoctors, passed as navArgument
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedSpecialty by remember { mutableStateOf("General") }
+    var selectedSpecialty by remember { mutableStateOf("All") }
 
-    val filteredDoctors = sampleDoctors.filter { doctor ->
-        val matchesSearch = searchQuery.isBlank() ||
-                doctor.name.contains(searchQuery, ignoreCase = true) ||
-                doctor.specialty.contains(searchQuery, ignoreCase = true)
-        val matchesSpecialty = selectedSpecialty == "More" || doctor.specialty.contains(
-            when (selectedSpecialty) {
-                "General" -> "General"
-                "Dental" -> "Dental"
-                "Cardiology" -> "Cardio"
-                else -> ""
-            },
-            ignoreCase = true
-        )
-        matchesSearch && matchesSpecialty
+    val filteredDoctors = remember(selectedSpecialty, sampleDoctors) {
+        if (selectedSpecialty == "All") {
+            sampleDoctors
+        } else {
+            sampleDoctors.filter { it.specialty.equals(selectedSpecialty, ignoreCase = true) }
+        }
     }
 
     Scaffold(
@@ -125,8 +122,11 @@ fun AppointmentMain(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                specialties.forEach { specialty ->
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(specialties) { specialty ->
                     SpecialtyChip(
                         label = specialty,
                         selected = selectedSpecialty == specialty,
@@ -146,18 +146,34 @@ fun AppointmentMain(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                itemsIndexed(filteredDoctors) { _, doctor ->
-                    // look up the doctor's real position in the master list, since filtering changes index
-                    val realIndex = sampleDoctors.indexOf(doctor)
-                    DoctorCard(
-                        doctor = doctor,
-                        onViewProfile = { onViewProfile(realIndex) },
-                        onBookNow = { onBookNow(doctor) }
+            if (filteredDoctors.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No doctors found in this specialty",
+                        color = Color.Gray,
+                        fontSize = 14.sp
                     )
+                }
+            } else {
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    items(filteredDoctors) { doctor ->
+                        // look up the doctor's real position in the master list, since filtering changes index
+                        val realIndex = sampleDoctors.indexOf(doctor)
+                        DoctorCard(
+                            doctor = doctor,
+                            onViewProfile = { onViewProfile(realIndex) },
+                            onBookNow = { onBookNow(doctor) }
+                        )
+                    }
                 }
             }
 
@@ -193,7 +209,18 @@ private fun SpecialtyChip(label: String, selected: Boolean, onClick: () -> Unit)
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(if (selected) Color(0xFF1E50FF) else Color.White)
-            .then(Modifier.padding(horizontal = 18.dp, vertical = 10.dp)),
+//            .then(Modifier.padding(horizontal = 18.dp, vertical = 10.dp)),
+            .border(
+                width = 1.dp,
+                color = if (selected) Color(0xFF1E50FF) else Color(0xFFE2E8F0),
+                shape = RoundedCornerShape(50)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 18.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -201,7 +228,7 @@ private fun SpecialtyChip(label: String, selected: Boolean, onClick: () -> Unit)
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (selected) Color.White else Color(0xFF14213D),
-            modifier = Modifier.clickableNoRipple(onClick)
+//            modifier = Modifier.clickableNoRipple(onClick)
         )
     }
 }

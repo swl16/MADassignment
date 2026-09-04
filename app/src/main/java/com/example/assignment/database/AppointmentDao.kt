@@ -3,6 +3,7 @@ package com.example.assignment.database
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -11,8 +12,11 @@ import kotlinx.coroutines.flow.Flow
 interface AppointmentDao {
     // 1. Used when "Confirm appointment" is tapped — returns the new row's id
     //    so the confirmation screen can navigate straight to it.
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(appointment: Appointment): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAppointments(appointments: List<Appointment>)
 
     // 2. Used by AppointmentScreen to show this user's appointment list (auto-updates UI)
     @Query("SELECT * FROM appointments WHERE username = :username ORDER BY id DESC")

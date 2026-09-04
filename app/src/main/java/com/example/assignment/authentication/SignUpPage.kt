@@ -1,8 +1,10 @@
 package com.example.assignment.authentication
 
+import android.R.attr.text
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,14 +18,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -44,6 +53,10 @@ import androidx.compose.ui.unit.sp
 import com.example.assignment.ui.components.PasswordTextField
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
+import java.util.TimeZone
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SignUpScreen(
@@ -56,7 +69,9 @@ fun SignUpScreen(
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var mobileNumberField by remember { mutableStateOf(TextFieldValue("")) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var dateOfBirth by remember { mutableStateOf("") }
+    val datePickerState = rememberDatePickerState()
     var agreedToTerms by remember { mutableStateOf(false) }
     var validationError by remember { mutableStateOf("") }
     var activeDialog by remember { mutableStateOf<LegalDialog?>(null) }
@@ -155,16 +170,83 @@ fun SignUpScreen(
 
         Text(text = "Date of Birth ", fontSize = 12.sp, fontWeight = SemiBold, color = Color.DarkGray)
         Spacer(modifier = Modifier.height(5.dp))
-        TextField(
-            value = dateOfBirth,
-            onValueChange = { dateOfBirth = it },
-            placeholder = { Text(" DD/MM/YYYY ", color = Color(0xFF8DA6FF)) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = appTextFieldColors(Color(0xFFE5EDFF)),
-            singleLine = true
-        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            TextField(
+                value = dateOfBirth,
+                onValueChange = {},
+                readOnly = true,
+                placeholder = { Text(" DD/MM/YYYY ", color = Color(0xFF8DA6FF)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = appTextFieldColors(Color(0xFFE5EDFF)),
+                singleLine = true,
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Calendar",
+                        tint = Color(0xFF3B67E9)
+                    )
+                }
+            )
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { showDatePicker = true }
+            )
+        }
         Spacer(modifier = Modifier.height(30.dp))
+
+//        OutlinedTextField(
+//            value = selectedDateText,
+//            onValueChange = {},
+//            readOnly = true,
+//            label = { Text("Select Date") },
+//            trailingIcon = {
+//                Icon(
+//                    imageVector = Icons.Default.DateRange,
+//                    contentDescription = "Calendar",
+//                    modifier = Modifier.clickable { showDatePicker = true }
+//                )
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .clickable { showDatePicker = true }
+//        )
+
+        // 2. Material 3 Date Picker Dialog
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                // Convert UTC timestamp to readable date string
+                                val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+                                    timeZone = TimeZone.getTimeZone("UTC")
+                                }
+                                dateOfBirth = formatter.format(Date(millis))
+                            }
+                            showDatePicker = false
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
 
         // ---- TERMS & PRIVACY SECTION ----
         Row(
@@ -196,10 +278,8 @@ fun SignUpScreen(
                             indication = null
                         ) { activeDialog = LegalDialog.TERMS }
                     )
-                }
-                Row {
                     Text(
-                        text = "and ",
+                        text = " and ",
                         fontSize = 11.sp,
                         fontWeight = SemiBold,
                         color = Color.Gray
@@ -278,7 +358,7 @@ fun SignUpScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Row(
             modifier = Modifier

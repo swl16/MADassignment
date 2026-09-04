@@ -38,11 +38,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.assignment.database.Appointment
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import com.example.assignment.database.AppointmentViewModel
+import java.time.LocalTime
 
 // NOTE: java.time requires core library desugaring for minSdk < 26.
 // In app-level build.gradle:
@@ -53,10 +57,14 @@ private val timeSlots = listOf("9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM")
 
 @Composable
 fun SelectDateTimeScreen(
+    navController: NavController,
+    viewModel: AppointmentViewModel,
+    username: String,
     doctor: Doctor,
     initialDate: LocalDate = LocalDate.now(),
     initialTime: String? = null,
     isRescheduling: Boolean = false,
+    appointmentIdToReschedule: Int?= null,
     onNavigateBack: () -> Unit = {},
     onConfirm: (date: LocalDate, time: String) -> Unit = { _, _ -> }
 ) {
@@ -67,6 +75,9 @@ fun SelectDateTimeScreen(
     var selectedTime by remember { mutableStateOf<String?>(initialTime) }
 
     val weekDays = remember(weekStart) { (0..6).map { weekStart.plusDays(it.toLong()) } }
+
+    val today = LocalDate.now()
+    val currentWeekStart = today.with(DayOfWeek.MONDAY)
 
     Scaffold(containerColor = Color(0xFFF8FAFF)) { innerPadding ->
         Column(
@@ -135,11 +146,12 @@ fun SelectDateTimeScreen(
                     color = Color(0xFF14213D)
                 )
                 Row {
+                    val canGoBack = weekStart.isAfter(currentWeekStart)
                     Icon(
                         imageVector = Icons.Default.ChevronLeft,
                         contentDescription = "Previous week",
-                        tint = Color.Gray,
-                        modifier = Modifier.clickable { weekStart = weekStart.minusWeeks(1) }
+                        tint = if (canGoBack) Color.Gray else Color(0xFFD3D3D3),
+                        modifier = if (canGoBack) Modifier.clickable { weekStart = weekStart.minusWeeks(1) } else Modifier
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Icon(
@@ -172,6 +184,9 @@ fun SelectDateTimeScreen(
             Text(text = "Available time", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF14213D))
             Spacer(modifier = Modifier.height(10.dp))
 
+            val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
+            val currentTime = LocalTime.now()
+
             // 2x2 time slot grid
             timeSlots.chunked(2).forEach { rowSlots ->
                 Row(
@@ -179,9 +194,15 @@ fun SelectDateTimeScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     rowSlots.forEach { slot ->
+
+                        val isPastTime = selectedDate == today && try{
+                            LocalTime.parse(slot, timeFormatter).isBefore(currentTime)
+                        }catch (e: Exception) { false }
+
                         TimeSlotButton(
                             label = slot,
                             selected = selectedTime == slot,
+                            enabled = !isPastTime,
                             modifier = Modifier.weight(1f),
                             onClick = { selectedTime = slot }
                         )
@@ -226,7 +247,39 @@ fun SelectDateTimeScreen(
             }
 
             Button(
-                onClick = { selectedTime?.let { onConfirm(selectedDate, it) } },
+                onClick = {
+                    selectedTime?.let { time ->
+                        // Format the date to match the "Thursday, 16 July 2026" standard
+                        val formattedDate =
+                            selectedDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+
+                        if (isRescheduling && appointmentIdToReschedule != null) {
+                            val updateAppt = Appointment(
+                                id = appointmentIdToReschedule,
+                                username = username,
+                                doctorName = doctor.name,
+                                specialty = doctor.specialty,
+                                date = formattedDate,
+                                time = time,
+                                status = "Upcoming"
+                            )
+                            viewModel.updateAppointment(updateAppt)
+                            navController.popBackStack()
+                        } else {
+                            val newAppointment = Appointment(
+                                username = username,
+                                doctorName = doctor.name,
+                                specialty = doctor.specialty,
+                                date = formattedDate,
+                                time = time
+                            )
+
+                            viewModel.saveAppointment(newAppointment) { newId ->
+                                navController.navigate("booking_confirmed/$newId")
+                            }
+                        }
+                    }
+                },
                 enabled = selectedTime != null,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -247,8 +300,11 @@ fun SelectDateTimeScreen(
 
 @Composable
 private fun DayChip(day: LocalDate, selected: Boolean, onClick: () -> Unit) {
+
+    val isPast = day.isBefore(LocalDate.now())
+
     Column(
-        modifier = Modifier.clickable { onClick() },
+        modifier = if (isPast) Modifier else Modifier.clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -268,19 +324,30 @@ private fun DayChip(day: LocalDate, selected: Boolean, onClick: () -> Unit) {
                 text = "${day.dayOfMonth}",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (selected) Color.White else Color(0xFF14213D)
+                color = when{
+                    selected -> Color.White
+                    isPast -> Color(0xFFD3D3D3)
+                    else -> Color(0xFF14213D)
+                }
             )
         }
     }
 }
 
 @Composable
-private fun TimeSlotButton(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun TimeSlotButton(label: String, selected: Boolean, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(if (selected) Color(0xFF1E50FF) else Color.White)
-            .clickable { onClick() }
+            .background(
+                when {
+                    selected -> Color(0xFF1E50FF)
+                    !enabled -> Color(0xFFF5F5F5)
+                    else -> Color.White
+                }
+            )
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -288,15 +355,19 @@ private fun TimeSlotButton(label: String, selected: Boolean, modifier: Modifier 
             text = label,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color = if (selected) Color.White else Color(0xFF14213D)
+            color = when {
+                selected -> Color.White
+                !enabled -> Color(0xFFB0B0B0)
+                else -> Color(0xFF14213D)
+            }
         )
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun SelectDateTimePreview() {
-    SelectDateTimeScreen(doctor = sampleDoctors[0],isRescheduling = true,
-        onNavigateBack = {},
-        onConfirm = { _, _ -> })
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun SelectDateTimePreview() {
+//    SelectDateTimeScreen(doctor = sampleDoctors[0],isRescheduling = true,
+//        onNavigateBack = {},
+//        onConfirm = { _, _ -> })
+//}

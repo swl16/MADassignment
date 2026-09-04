@@ -44,6 +44,7 @@ import com.example.assignment.navigation.BottomNavBar
 import com.example.assignment.viewmodel.UserViewModel
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.Locale
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -75,7 +76,7 @@ fun HomeScreen(
     val firstName = currentUser?.fullName?.split(" ")?.firstOrNull() ?: "User"
     val profilePictureUri = currentUser?.profilePictureUri
 
-    val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+    val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
     val currentTime = LocalTime.now()
 
     val nextMedication = reminders.filter{it.isActive}.filter{
@@ -83,6 +84,7 @@ fun HomeScreen(
         try{
             LocalTime.parse(reminder.time,timeFormatter).isAfter(currentTime)
         }catch (e:Exception){
+            e.printStackTrace()
             false
         }
     }.minByOrNull { reminder ->
@@ -499,21 +501,6 @@ fun TodayMedicationCard(
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1A1A1A)
                         )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // 3. Mark as taken button aligned to the right
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Text(
-                                text = "Mark as taken",
-                                color = Color(0xFF1E50FF),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
             }
