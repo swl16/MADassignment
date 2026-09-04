@@ -1,5 +1,6 @@
 package com.example.assignment.reminder
 
+import android.R.attr.onClick
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,13 +27,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.navigation.BottomNavBar
+import kotlinx.coroutines.NonCancellable.isActive
 
 @Composable
 fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel, username: String) {
 
     LaunchedEffect(username) {
         if (username.isNotBlank()) {
-            viewModel.loadReminders(username)
+            viewModel.setUsername(username)
+            viewModel.syncReminders()
+            viewModel.fetchReminders() // Loads instantly from SQLite cache
         }
     }
 
@@ -82,10 +86,17 @@ fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel, u
             } else {
                 LazyColumn {
                     items(reminders) { reminder ->
+                        // Format text safely, omitting nulls
+                        val dosageDisplay = reminder.dosage ?: ""
+                        val instructionDisplay = reminder.instructions ?: ""
+                        val dosageInfoText = listOf(dosageDisplay, instructionDisplay)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" • ")
+
                         ReminderCardItem(
-                            time = reminder.time,
+                            time = reminder.time ?: "No time",
                             medicineName = reminder.medicineName,
-                            dosageInfo = "${reminder.dosage} • ${reminder.instructions}",
+                            dosageInfo = dosageInfoText,
                             statusText = if (reminder.isActive) "Active" else "Inactive",
                             isActive = reminder.isActive,
                             onCheckedChange = { isChecked ->

@@ -89,10 +89,10 @@ fun ReminderDetailsScreen(
         val existingReminder = reminders.find { it.id == reminderId }
         if (existingReminder != null) {
             medicineName = existingReminder.medicineName
-            dosage = existingReminder.dosage
-            frequency = existingReminder.frequency
+            dosage = existingReminder.dosage ?: ""
+            frequency = existingReminder.frequency ?: ""
             reminderTime = existingReminder.time
-            instructions = existingReminder.instructions
+            instructions = existingReminder.instructions ?: ""
             notificationEnabled = existingReminder.isNotificationEnabled
             isActive = existingReminder.isActive
         }
@@ -195,10 +195,10 @@ fun ReminderDetailsScreen(
                         id = reminderId, // Keep the same document ID to update, not create new
                         username = username,
                         medicineName = medicineName,
-                        dosage = dosage,
-                        frequency = frequency,
+                        dosage = dosage.trim().ifBlank { null },
+                        frequency = frequency.trim().ifBlank { null },
                         time = reminderTime,
-                        instructions = instructions,
+                        instructions = instructions.trim().ifBlank { null },
                         isNotificationEnabled = notificationEnabled,
                         isActive = isActive
                     )

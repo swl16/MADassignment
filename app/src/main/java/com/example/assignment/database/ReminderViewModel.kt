@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.temporal.TemporalQueries.localDate
@@ -12,22 +13,30 @@ import java.time.temporal.TemporalQueries.localDate
 class ReminderViewModel(private val repository: ReminderRepository): ViewModel(){
 
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
-    val reminders: StateFlow<List<Reminder>> = _reminders
+    val reminders: StateFlow<List<Reminder>> = _reminders.asStateFlow()
 
-    fun loadReminders(username : String){
-        viewModelScope.launch{
-            repository.observeReminders(username).collectLatest { localData ->
+    private var currentUsername: String = ""
+
+    fun setUsername(username: String) {
+        currentUsername = username
+    }
+
+    fun fetchReminders() {
+        if (currentUsername.isBlank()) return
+        viewModelScope.launch {
+            repository.observeReminders(currentUsername).collect { localData ->
                 _reminders.value = localData
             }
         }
-        refreshFromCloud(username)
     }
 
-    fun refreshFromCloud(username:String){
+    fun syncReminders() {
+        if (currentUsername.isBlank()) return
         viewModelScope.launch {
-            repository.syncFromRemote(username)
+            repository.syncFromRemote(currentUsername)
         }
     }
+
 
     fun saveReminder(reminder: Reminder, username: String) {
         viewModelScope.launch {

@@ -78,7 +78,10 @@ fun HomeScreen(
         if (loggedInUsername.isNotEmpty()) {
             viewModel.loadUserProfile(loggedInUsername)
             appointmentViewModel.loadAppointments(loggedInUsername)
-            reminderViewModel.loadReminders(loggedInUsername)
+
+            reminderViewModel.setUsername(loggedInUsername)
+            reminderViewModel.fetchReminders()
+            reminderViewModel.syncReminders()
         }
     }
 
@@ -109,7 +112,8 @@ fun HomeScreen(
     val nextMedication = reminders.filter{it.isActive}.filter{
         reminder ->
         try{
-            val parsedTime = LocalTime.parse(reminder.time,timeFormatter)
+            val cleanTime = reminder.time.trim().replace("\u00A0", " ")
+            val parsedTime = LocalTime.parse(cleanTime, timeFormatterBuilder)
             parsedTime.isAfter(currentTime)
         }catch (e:Exception){
             e.printStackTrace()
@@ -117,7 +121,8 @@ fun HomeScreen(
         }
     }.sortedBy { reminder ->
         try {
-            LocalTime.parse(reminder.time, timeFormatter)
+            val cleanTime = reminder.time.trim().replace("\u00A0", " ")
+            LocalTime.parse(cleanTime, timeFormatterBuilder)
         }catch (e: Exception){
             LocalTime.MAX
         }
@@ -500,6 +505,14 @@ fun TodayMedicationCard(reminders: List<Reminder>) {
         // THE LOGIC: If there is a medicine, show the green card.
         if (!reminders.isEmpty()) {
             reminders.forEach { reminder ->
+
+                val dosageDisplay = reminder.dosage ?: ""
+                val instructionDisplay = reminder.instructions ?: ""
+
+                val detailsText = listOf(dosageDisplay, instructionDisplay)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" • ")
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -519,7 +532,7 @@ fun TodayMedicationCard(reminders: List<Reminder>) {
                             modifier = Modifier.fillMaxWidth().padding(16.dp)
                         ) {
                             Text(
-                                text = "${reminder.time}  •  ${reminder.dosage} • ${reminder.instructions}",
+                                text = "${reminder.time}  •  $detailsText",
                                 fontSize = 12.sp,
                                 color = Color.Gray
                             )

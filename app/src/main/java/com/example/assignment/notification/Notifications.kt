@@ -51,7 +51,9 @@ fun NotificationsScreen(
     var readIds by remember { mutableStateOf(setOf<String>()) }
 
     LaunchedEffect(username) {
-        reminderViewModel.loadReminders(username)
+        reminderViewModel.setUsername(username)
+        reminderViewModel.fetchReminders()
+        reminderViewModel.syncReminders()
     }
 
     val upcomingAppointments = appointments.filter { it.status == "Upcoming" }
@@ -120,7 +122,7 @@ fun NotificationsScreen(
                         NotificationCard(
                             icon = "!", iconColor = Color.White, iconBg = Color(0xFFFFA000),
                             title = "Take ${reminder.medicineName}",
-                            description = if (reminder.instructions.isNotBlank()) {
+                            description = if (reminder.instructions.isNullOrBlank()) {
                                 "${reminder.dosage} • ${reminder.instructions}"
                             } else {
                                 "${reminder.dosage} • ${reminder.frequency}"

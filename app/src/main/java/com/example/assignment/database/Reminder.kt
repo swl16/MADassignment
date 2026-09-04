@@ -18,10 +18,10 @@ data class Reminder(
     @SerialName("medicine_name")
     val medicineName: String = "",
 
-    val dosage: String = "",
-    val frequency: String = "",
+    val dosage: String? = null,
+    val frequency: String? = null,
     val time: String = "",
-    val instructions: String = "",
+    val instructions: String? = null,
 
     @SerialName("is_notification_enabled")
     val isNotificationEnabled: Boolean = true,

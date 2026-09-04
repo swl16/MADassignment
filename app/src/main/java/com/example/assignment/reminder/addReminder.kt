@@ -338,7 +338,7 @@ fun AddReminderScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.weight(1f))
 
         Button(
             onClick = {
@@ -351,10 +351,10 @@ fun AddReminderScreen(
                 if(isNameValid && isTimeValid) {
                     val newReminder = Reminder(
                         medicineName = medicineName.trim(),
-                        dosage = dosage.trim(),
-                        frequency = frequency.trim(),
+                        dosage = dosage.trim().ifBlank { null },
+                        frequency = frequency.trim().ifBlank { null },
                         time = reminderTime,
-                        instructions = instruction.trim(),
+                        instructions = instruction.trim().ifBlank { null },
                         isNotificationEnabled = notificationEnable,
                         isActive = true
                     )
