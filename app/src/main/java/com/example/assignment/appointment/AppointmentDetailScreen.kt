@@ -304,9 +304,4 @@ fun InfoRow(label: String, value: String) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun AppointmentDetailPreview() {
-    // Provide an empty list or mock data for preview
-    AppointmentDetailScreen(navController = rememberNavController(),Appointment(1,"2001","Sarah Lim", "General", "10/10/2026","10:30","HealthCare Clinic","Upcoming","General reason"), sampleDoctors[1])
-}
+
