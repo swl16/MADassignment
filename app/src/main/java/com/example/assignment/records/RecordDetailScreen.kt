@@ -1,5 +1,6 @@
 package com.example.assignment.records
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,6 +37,7 @@ fun RecordDetailScreen(
     onBackClick: () -> Unit,
     onDeleteComplete: () -> Unit
 ) {
+    val context = LocalContext.current
     val record by viewModel.selectedRecord.collectAsState()
 
     var editedTitle by remember { mutableStateOf("") }
@@ -80,7 +83,7 @@ fun RecordDetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(RecordsScreenBg)
-            .verticalScroll(rememberScrollState()) // Enables scrolling
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
         Spacer(Modifier.height(20.dp))
@@ -147,8 +150,17 @@ fun RecordDetailScreen(
         Button(
             onClick = {
                 val trimmedTitle = editedTitle.trim()
-                titleError = if (trimmedTitle.isBlank()) "Please enter a record title." else null
-                if (trimmedTitle.isBlank()) return@Button
+                if (trimmedTitle.isBlank()) {
+                    titleError = "Please enter a record title."
+                    return@Button
+                } else {
+                    titleError = null
+                }
+
+                if (!hasChanges) {
+                    Toast.makeText(context, "No changes detected. Please make changes before saving.", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
 
                 val updatedRecord = currentRecord.copy(
                     title = trimmedTitle,
@@ -158,10 +170,12 @@ fun RecordDetailScreen(
                     provider = editedProvider.trim().ifBlank { null }
                 )
                 viewModel.updateRecord(updatedRecord)
+                Toast.makeText(context, "Changes saved successfully", Toast.LENGTH_SHORT).show()
+                onBackClick()
             },
-            enabled = hasChanges,
+            enabled = true,
             modifier = Modifier.fillMaxWidth().height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue, disabledContainerColor = PrimaryBlue.copy(alpha = 0.4f)),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
             shape = RoundedCornerShape(26.dp)
         ) {
             Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
