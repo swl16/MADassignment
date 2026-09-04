@@ -57,7 +57,7 @@ import com.example.assignment.database.ReminderViewModel
 fun ReminderDetailsScreen(
     navController: NavController,
     viewModel: ReminderViewModel,
-    reminderId: String, username: String
+    reminderId: Int, username: String
 ) {
     // Collect the list of reminders from the ViewModel
     val reminders by viewModel.reminders.collectAsState()

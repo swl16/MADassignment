@@ -1,5 +1,6 @@
 package com.example.assignment.appointment
 
+import android.service.notification.Condition.newId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -264,7 +265,7 @@ fun SelectDateTimeScreen(
                                 status = "Upcoming"
                             )
                             viewModel.updateAppointment(updateAppt)
-                            navController.popBackStack()
+                            navController.navigate("booking_confirmed/$appointmentIdToReschedule")
                         } else {
                             val newAppointment = Appointment(
                                 username = username,

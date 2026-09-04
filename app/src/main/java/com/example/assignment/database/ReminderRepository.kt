@@ -38,7 +38,7 @@ class ReminderRepository(private val dao: ReminderDao) {
     }
 
 
-    suspend fun deleteReminder(id: String) {
+    suspend fun deleteReminder(id: Int) {
         withContext(Dispatchers.IO) {
             dao.deleteReminder(id)
 
