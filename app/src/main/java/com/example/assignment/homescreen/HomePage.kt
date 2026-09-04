@@ -77,11 +77,9 @@ fun HomeScreen(
     LaunchedEffect(loggedInUsername) {
         if (loggedInUsername.isNotEmpty()) {
             viewModel.loadUserProfile(loggedInUsername)
-            appointmentViewModel.loadAppointments(loggedInUsername) // <-- Add your ViewModel fetch method here
+            appointmentViewModel.loadAppointments(loggedInUsername)
         }
     }
-
-
 
     val latestAppointment = remember(appointments) {
         val now = LocalDateTime.now()
