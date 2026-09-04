@@ -54,7 +54,6 @@ class EmergencyContactViewModel(
                 val generatedId = emergencyContactDao.insert(contact)
                 _contact.value = contact.copy(id = generatedId.toInt())
             }
-            _contact.value = contact
 
             // Sync to Supabase
             try {

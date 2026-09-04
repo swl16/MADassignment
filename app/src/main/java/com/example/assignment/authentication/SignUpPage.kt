@@ -1,6 +1,5 @@
 package com.example.assignment.authentication
 
-import android.R.attr.text
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +27,6 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -53,10 +51,10 @@ import androidx.compose.ui.unit.sp
 import com.example.assignment.ui.components.PasswordTextField
 import com.example.assignment.ui.theme.appTextFieldColors
 import com.example.assignment.viewmodel.UserViewModel
-import java.util.TimeZone
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun SignUpScreen(
@@ -200,23 +198,6 @@ fun SignUpScreen(
             )
         }
         Spacer(modifier = Modifier.height(30.dp))
-
-//        OutlinedTextField(
-//            value = selectedDateText,
-//            onValueChange = {},
-//            readOnly = true,
-//            label = { Text("Select Date") },
-//            trailingIcon = {
-//                Icon(
-//                    imageVector = Icons.Default.DateRange,
-//                    contentDescription = "Calendar",
-//                    modifier = Modifier.clickable { showDatePicker = true }
-//                )
-//            },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .clickable { showDatePicker = true }
-//        )
 
         // 2. Material 3 Date Picker Dialog
         if (showDatePicker) {
