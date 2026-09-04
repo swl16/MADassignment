@@ -22,53 +22,6 @@ data class Facility(
     val lat: Double,
     val lon: Double
 )
-//data class NearbySearchRequest(
-//    val includedTypes: List<String> = listOf("hospital", "clinic", "pharmacy"),
-//    val maxResultCount: Int = 10,
-//    val locationRestriction: LocationRestriction
-//)
-//
-//data class LocationRestriction(
-//    val circle: CircleRestriction
-//)
-//
-//data class CircleRestriction(
-//    val center: CenterPoint,
-//    val radius: Double = 5000.0 // Radius in meters (5 km)
-//)
-//
-//data class CenterPoint(
-//    val latitude: Double,
-//    val longitude: Double
-//)
-//
-//// --- Response Models ---
-//data class PlacesResponse(
-//    @SerializedName("places") val places: List<PlaceDto>?
-//)
-//
-//data class PlaceDto(
-//    val id: String,
-//    val displayName: LocalizedText?,
-//    val formattedAddress: String?,
-//    val location: LatLngDto?,
-//    val primaryTypeDisplayName: LocalizedText?,
-//    val currentOpeningHours: OpeningHoursDto?
-//)
-//
-//data class LocalizedText(val text: String)
-//data class LatLngDto(val latitude: Double, val longitude: Double)
-//data class OpeningHoursDto(val openNow: Boolean?)
-//
-//// --- Retrofit API Service ---
-//interface PlacesApiService {
-//    @POST("v1/places:searchNearby")
-//    suspend fun searchNearby(
-//        @Header("X-Goog-Api-Key") apiKey: String,
-//        @Header("X-Goog-FieldMask") fieldMask: String = "places.id,places.displayName,places.formattedAddress,places.location,places.primaryTypeDisplayName,places.currentOpeningHours",
-//        @Body request: NearbySearchRequest
-//    ): PlacesResponse
-//}
 
 data class OverpassResponse(
     @SerializedName("elements") val elements: List<OsmElement>?

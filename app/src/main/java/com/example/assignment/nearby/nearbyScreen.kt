@@ -1,11 +1,12 @@
 package com.example.assignment.nearby
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
-import android.preference.PreferenceManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -30,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.location.LocationServices
@@ -37,27 +41,22 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NearbyScreen(navController: NavController,
-                 onNavigateBack: () -> Unit = {}) {
-
+fun NearbyScreen(
+    navController: NavController,
+    onNavigateBack: () -> Unit = {}
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
-    LaunchedEffect(Unit) {
-        Configuration.getInstance().userAgentValue = "MyHealthCareApp-Assignment/1.0 (student@assignment.local)"
-
-        // 2. Load SharedPreferences configuration
-        Configuration.getInstance().load(context, PreferenceManager.getDefaultSharedPreferences(context))
-    }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var userLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var facilities by remember { mutableStateOf<List<Facility>>(emptyList()) }
@@ -68,23 +67,45 @@ fun NearbyScreen(navController: NavController,
 
     var osmMapView by remember { mutableStateOf<MapView?>(null) }
 
-//    val defaultLocation = LatLng(3.2152, 101.7289) // Default fallback
-//    val cameraPositionState = rememberCameraPositionState {
-//        position = CameraPosition.fromLatLngZoom(defaultLocation, 14f)
-//    }
+    LaunchedEffect(Unit) {
+        Configuration.getInstance().userAgentValue = context.packageName
+
+        // 2. Load preferences
+        val sharedPrefs = context.getSharedPreferences("osm_prefs", Context.MODE_PRIVATE)
+        Configuration.getInstance().load(context, sharedPrefs)
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> osmMapView?.onResume()
+                Lifecycle.Event.ON_PAUSE -> osmMapView?.onPause()
+                Lifecycle.Event.ON_DESTROY -> osmMapView?.onDetach()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            osmMapView?.onDetach()
+        }
+    }
 
     fun loadPlaces(lat: Double, lng: Double) {
         coroutineScope.launch {
             isLoading = true
             errorMessage = null
             try {
+                val latFormatted = String.format(Locale.US, "%.6f", lat)
+                val lngFormatted = String.format(Locale.US, "%.6f", lng)
+
                 val osmQuery = """
                     [out:json][timeout:40];
                     (
-                      node["amenity"="hospital"](around:3000,$lat,$lng);
-                      node["amenity"="clinic"](around:3000,$lat,$lng);
-                      node["amenity"="doctors"](around:3000,$lat,$lng);
-                      node["amenity"="pharmacy"](around:3000,$lat,$lng);
+                      node["amenity"="hospital"](around:3000, $latFormatted, $lngFormatted);
+                      node["amenity"="clinic"](around:3000,$latFormatted, $lngFormatted);
+                      node["amenity"="doctors"](around:3000,$latFormatted, $lngFormatted);
+                      node["amenity"="pharmacy"](around:3000,$latFormatted, $lngFormatted);
                     );
                     out body;
                 """.trimIndent()
@@ -101,7 +122,7 @@ fun NearbyScreen(navController: NavController,
                         // Calculate distance from user GPS
                         val distArr = FloatArray(1)
                         Location.distanceBetween(lat, lng, placeLat, placeLng, distArr)
-                        val distKm = String.format("%.1f km", distArr[0] / 1000f)
+                        val distKm = String.format(Locale.US, "%.1f km", distArr[0] / 1000f)
 
                         val categoryType = when (item.tags?.amenity) {
                             "hospital" -> "Hospital"
@@ -125,7 +146,7 @@ fun NearbyScreen(navController: NavController,
                 facilities = mappedList
                 selectedFacility = mappedList.firstOrNull()
             } catch (e: Exception) {
-                errorMessage = "Network error: ${e.localizedMessage}"
+                errorMessage = "Network error: ${e.localizedMessage ?: "Failed to fetch nearby places."}"
             } finally {
                 isLoading = false
             }
@@ -177,8 +198,10 @@ fun NearbyScreen(navController: NavController,
         }
     }
 
-    val filteredFacilities = facilities.filter {
-        it.name.contains(searchQuery, ignoreCase = true) || it.type.contains(searchQuery, ignoreCase = true)
+    val filteredFacilities = remember(facilities, searchQuery){
+        facilities.filter {
+            it.name.contains(searchQuery, ignoreCase = true) || it.type.contains(searchQuery, ignoreCase = true)
+        }
     }
 
     Column(
@@ -238,22 +261,17 @@ fun NearbyScreen(navController: NavController,
                         controller.setCenter(userLocation ?: GeoPoint(3.2152, 101.7289))
                         osmMapView = this
                     }
-
-//                    MapView(ctx).apply {
-//                        setTileSource(TileSourceFactory.MAPNIK)
-//                        setMultiTouchControls(true)
-//                        controller.setZoom(15.0)
-//                        controller.setCenter(GeoPoint(3.2152, 101.7289))
-//                        osmMapView = this
-//                    }
                 },
                 update = { mapView ->
+                    if (mapView.repository == null) return@AndroidView
+
                     mapView.overlays.clear()
                     filteredFacilities.forEach { facility ->
                         val marker = Marker(mapView).apply {
                             position = GeoPoint(facility.lat, facility.lon)
                             title = "${facility.label}. ${facility.name}"
                             snippet = "${facility.type} • ${facility.distance}"
+                            infoWindow = null // Disable built-in bubble since Compose handles the cards below
                             setOnMarkerClickListener { _, _ ->
                                 selectedFacility = facility
                                 true
@@ -262,6 +280,7 @@ fun NearbyScreen(navController: NavController,
                         mapView.overlays.add(marker)
                     }
                     mapView.invalidate()
+
                 }
             )
 
@@ -298,6 +317,51 @@ fun NearbyScreen(navController: NavController,
                     color = Color(0xFF3B67E9)
                 )
             }
+
+            if (errorMessage != null && !isLoading) {
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Failed to load facilities",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = errorMessage ?: "Unknown error occurred.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Button(
+                            onClick = {
+                                val loc = userLocation
+                                if (loc != null) {
+                                    loadPlaces(loc.latitude, loc.longitude)
+                                } else {
+                                    fetchGPS()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B67E9)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Retry", fontSize = 13.sp, color = Color.White)
+                        }
+                    }
+                }
+            }
         }
 
         // --- Bottom Sheet ---
@@ -331,10 +395,6 @@ fun NearbyScreen(navController: NavController,
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-
-                errorMessage?.let {
-                    Text(text = it, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-                }
 
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -399,13 +459,13 @@ fun NearbyScreen(navController: NavController,
                 Button(
                     onClick = {
                         selectedFacility?.let { target ->
-                            val gmmIntentUri = Uri.parse("google.navigation:q=${target.lat},${target.lon}")
+                            val gmmIntentUri = Uri.parse("geo:${target.lat},${target.lon}?q=${target.lat},${target.lon}(${Uri.encode(target.name)})")
                             val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply {
                                 setPackage("com.google.android.apps.maps")
                             }
-                            if (mapIntent.resolveActivity(context.packageManager) != null) {
+                            try {
                                 context.startActivity(mapIntent)
-                            } else {
+                            } catch (e: ActivityNotFoundException) {
                                 val browserUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lon}")
                                 context.startActivity(Intent(Intent.ACTION_VIEW, browserUri))
                             }
