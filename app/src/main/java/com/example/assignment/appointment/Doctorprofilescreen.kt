@@ -1,5 +1,8 @@
 package com.example.assignment.appointment
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,11 +49,12 @@ import androidx.compose.ui.unit.sp
 fun DoctorProfileScreen(
     doctor: Doctor,
     onNavigateBack: () -> Unit = {},
-    onBookAppointment: () -> Unit = {},
-    onMessageClinic: () -> Unit = {}
+    onBookAppointment: () -> Unit = {}
 ) {
     var isFavorite by remember { mutableStateOf(false) }
     var selectedTime by remember { mutableStateOf(doctor.availableTimes.firstOrNull()) }
+
+    val context = LocalContext.current
 
     Scaffold(containerColor = Color(0xFFF8FAFF)) { innerPadding ->
         Column(
@@ -66,7 +72,7 @@ fun DoctorProfileScreen(
                 verticalAlignment = CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = Color(0xFF14213D),
                     modifier = Modifier.clickable { onNavigateBack() }
@@ -168,7 +174,27 @@ fun DoctorProfileScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedButton(
-                onClick = onMessageClinic,
+                onClick = {
+                    val clinicNumber = "601135613680" // Clinic contact number
+                    val inquiryMessage = "Hello, I would like to inquire about an appointment with ${doctor.name} at ${doctor.location}."
+
+                    val url = "https://api.whatsapp.com/send?phone=$clinicNumber&text=${java.net.URLEncoder.encode(inquiryMessage, "UTF-8")}"
+
+                    val whatsappIntent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse(url)
+                    }
+
+//                    val smsIntent = Intent(Intent.ACTION_VIEW).apply {
+//                        data = Uri.parse("sms:$clinicNumber")
+//                        putExtra("sms_body", inquiryMessage)
+//                    }
+
+                    try {
+                        context.startActivity(whatsappIntent)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "No SMS application available on this device", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),

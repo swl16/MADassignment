@@ -266,7 +266,6 @@ fun AppNavigation() {
                 onBookAppointment = {
                     navController.navigate("select_date_time/$index")
                 }
-                , onMessageClinic = { /* TODO if in scope */ }
             )
         }
 
