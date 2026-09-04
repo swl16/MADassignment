@@ -68,7 +68,7 @@ fun SelectDateTimeScreen(
     initialDate: LocalDate = LocalDate.now(),
     initialTime: String? = null,
     isRescheduling: Boolean = false,
-    appointmentIdToReschedule: Int?= null,
+    appointmentIdToReschedule: String?= null,
     onNavigateBack: () -> Unit = {}
 ) {
     var weekStart by remember {

@@ -23,7 +23,7 @@ import com.example.assignment.database.AppointmentDao
 
 @Composable
 fun BookingConfirmedScreen(
-    appointmentId: Int,
+    appointmentId: String,
     appointmentDao: AppointmentDao,
     onViewDetails: () -> Unit = {},
     onBackToHome: () -> Unit = {}

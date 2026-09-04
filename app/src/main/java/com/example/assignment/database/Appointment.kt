@@ -3,12 +3,13 @@ package com.example.assignment.database
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 @Entity(tableName = "appointments")
 @Serializable
 data class Appointment(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey
+    val id: String = UUID.randomUUID().toString(),
     val username: String,     // links this appointment to a User's username
     val doctorName: String,
     val specialty: String,

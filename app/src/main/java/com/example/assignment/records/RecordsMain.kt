@@ -22,6 +22,10 @@ fun RecordsMain(
 ) {
     LaunchedEffect(username) {
         viewModel.setUsername(username)
+
+        viewModel.fetchRecords()
+
+        viewModel.syncRecords()
     }
 
     val context = LocalContext.current

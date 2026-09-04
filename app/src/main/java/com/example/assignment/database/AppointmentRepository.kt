@@ -1,5 +1,6 @@
 package com.example.assignment.database
 
+import android.service.notification.Condition.newId
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -16,7 +17,7 @@ class AppointmentRepository(private val dao: AppointmentDao) {
         return dao.getBookedSlotsForDoctor(doctorName, date)
     }
 
-    suspend fun isSlotTaken(doctorName: String, date: String, time: String, excludeId: Int? = null): Boolean {
+    suspend fun isSlotTaken(doctorName: String, date: String, time: String, excludeId: String? = null): Boolean {
         return dao.isSlotTaken(doctorName, date, time, excludeId)
     }
 
@@ -48,22 +49,18 @@ class AppointmentRepository(private val dao: AppointmentDao) {
         }
     }
 
-    suspend fun saveAppointment(appointment: Appointment): Long {
+    suspend fun saveAppointment(appointment: Appointment): String {
         return withContext(Dispatchers.IO) {
-            // 1. Save locally for instant UI update
-            val newId = dao.insert(appointment)
+            dao.insert(appointment)
 
-            // 2. Attach the generated Room ID before sending to Supabase
-            val appointmentWithId = appointment.copy(id = newId.toInt())
 
-            // 3. Sync to cloud
             try {
-                table.upsert(appointmentWithId)
+                table.upsert(appointment)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
-            newId // Return the ID so your BookingConfirmedScreen can navigate to it
+            appointment.id // Return the ID so your BookingConfirmedScreen can navigate to it
         }
     }
 

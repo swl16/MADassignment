@@ -52,7 +52,7 @@ class EmergencyContactViewModel(
                 emergencyContactDao.update(contact)
             } else {
                 val generatedId = emergencyContactDao.insert(contact)
-                _contact.value = contact.copy(id = generatedId.toInt())
+                _contact.value = contact.copy(id = generatedId)
             }
 
             // Sync to Supabase

@@ -40,12 +40,12 @@ class AppointmentViewModel(private val repository: AppointmentRepository) : View
         return repository.getBookedSlots(doctorName, date)
     }
 
-    suspend fun canBookSlot(doctorName: String, date: String, time: String, excludeId: Int? = null): Boolean {
+    suspend fun canBookSlot(doctorName: String, date: String, time: String, excludeId: String? = null): Boolean {
         return !repository.isSlotTaken(doctorName, date, time, excludeId)
     }
 
     // Notice we accept a callback here so your UI can navigate after saving
-    fun saveAppointment(appointment: Appointment, onSuccess: (Long) -> Unit) {
+    fun saveAppointment(appointment: Appointment, onSuccess: (String) -> Unit) {
         viewModelScope.launch {
             val newId = repository.saveAppointment(appointment)
             onSuccess(newId)

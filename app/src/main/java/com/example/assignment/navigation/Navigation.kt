@@ -357,7 +357,7 @@ fun AppNavigation() {
         }
 
         composable("appointment_detail") {
-            val appointmentId = selectedAppointment?.id ?: -1
+            val appointmentId = selectedAppointment?.id ?: ""
 
             // 1. Collect live updates directly from DAO so any reschedule immediately updates this screen!
             val liveAppointment by produceState<Appointment?>(
@@ -387,9 +387,9 @@ fun AppNavigation() {
         }
 
         composable("reschedule_appointment/{appointmentId}",
-            arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
+            arguments = listOf(navArgument("appointmentId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val appointmentId = backStackEntry.arguments?.getInt("appointmentId") ?: -1
+            val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
 
             val appointmentState by produceState<Appointment?>(initialValue = selectedAppointment?.takeIf { it.id == appointmentId }, key1 = appointmentId) {
                 value = appointmentDao.getById(appointmentId)
@@ -457,9 +457,9 @@ fun AppNavigation() {
 
         composable(
             route = "booking_confirmed/{appointmentId}",
-            arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
+            arguments = listOf(navArgument("appointmentId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val appointmentId = backStackEntry.arguments?.getInt("appointmentId") ?: 0
+            val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
             BookingConfirmedScreen(
                 appointmentId = appointmentId,
                 appointmentDao = appointmentDao,

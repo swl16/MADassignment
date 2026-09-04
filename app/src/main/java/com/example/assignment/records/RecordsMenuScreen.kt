@@ -83,9 +83,6 @@ fun RecordsMenuScreen(
     val allRecords by viewModel.records.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchRecords()
-    }
 
     val recentRecords = remember(allRecords, searchQuery) {
         val filtered = if (searchQuery.isBlank()) allRecords

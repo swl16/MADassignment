@@ -56,8 +56,14 @@ fun RecordDetailScreen(
     LaunchedEffect(record) {
         record?.let {
             editedTitle = it.title
-            editedCategory = it.category
-            editedDateMillis = try { Instant.parse(it.recordDate).toEpochMilli() } catch (e: Exception) { System.currentTimeMillis() }
+
+            editedCategory = runCatching {
+                RecordCategory.valueOf(it.categoryName)
+            }.getOrDefault(RecordCategory.LAB_RESULTS)
+
+            // Use the existing Long value instead of parsing Strings
+            editedDateMillis = if (it.recordDateMillis > 0) it.recordDateMillis else System.currentTimeMillis()
+
             editedProvider = it.provider ?: ""
         }
     }
@@ -72,12 +78,9 @@ fun RecordDetailScreen(
     }
 
     val hasChanges = editedTitle != currentRecord.title ||
-            editedCategory != currentRecord.category ||
+            editedCategory.name != currentRecord.categoryName ||
             (editedProvider != (currentRecord.provider ?: "")) ||
-            run {
-                val originalMillis = try { Instant.parse(currentRecord.recordDate).toEpochMilli() } catch (e: Exception) { editedDateMillis }
-                originalMillis != editedDateMillis
-            }
+            editedDateMillis != currentRecord.recordDateMillis
 
     Column(
         modifier = Modifier
@@ -224,7 +227,7 @@ fun RecordDetailScreen(
 
 @Composable
 fun FilePreviewPanel(record: Record, viewModel: RecordViewModel) {
-    val isImage = record.fileType in listOf("JPG", "JPEG", "PNG")
+    val isImage = record.fileType.uppercase() in listOf("JPG", "JPEG", "PNG")
     var signedUrl by remember(record.filePath) { mutableStateOf<String?>(null) }
     var urlLoadFailed by remember(record.filePath) { mutableStateOf(false) }
 

@@ -24,7 +24,7 @@ interface AppointmentDao {
 
     // 3. Used by BookingConfirmedScreen to re-fetch the appointment just created
     @Query("SELECT * FROM appointments WHERE id = :id")
-    suspend fun getById(id: Int): Appointment?
+    suspend fun getById(id: String): Appointment?
 
     @Update
     suspend fun update(appointment: Appointment)
@@ -55,6 +55,6 @@ interface AppointmentDao {
         doctorName: String,
         date: String,
         time: String,
-        excludeId: Int? = null
+        excludeId: String? = null
     ): Boolean
 }
