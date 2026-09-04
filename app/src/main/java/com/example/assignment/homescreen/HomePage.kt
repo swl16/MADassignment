@@ -82,18 +82,21 @@ fun HomeScreen(
     val nextMedication = reminders.filter{it.isActive}.filter{
         reminder ->
         try{
-            LocalTime.parse(reminder.time,timeFormatter).isAfter(currentTime)
+            val parsedTime = LocalTime.parse(reminder.time,timeFormatter)
+            parsedTime.isAfter(currentTime)
         }catch (e:Exception){
             e.printStackTrace()
             false
         }
-    }.minByOrNull { reminder ->
+    }.sortedBy { reminder ->
         try {
             LocalTime.parse(reminder.time, timeFormatter)
         }catch (e: Exception){
             LocalTime.MAX
         }
     }
+
+
 
     Scaffold(
         containerColor = Color(0xFFF8FAFF),
@@ -126,7 +129,7 @@ fun HomeContent(
     firstName: String,
     profilePictureUri: String?,
     latestAppointment: Appointment?,
-    nextMedication: Reminder?,
+    nextMedication: List<Reminder>,
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToAppointmentDetail: (Appointment) -> Unit = {}
@@ -155,10 +158,7 @@ fun HomeContent(
         QuickActionsGrid(navController = navController)
         Spacer(modifier = Modifier.height(20.dp))
 
-        TodayMedicationCard(medicineName = nextMedication?.medicineName,
-            timeText = nextMedication?.time ?: "",
-            contextText = if (nextMedication != null) "${nextMedication.dosage} • ${nextMedication.instructions}" else ""
-        )
+        TodayMedicationCard(reminders = nextMedication)
     }
 }
 
@@ -442,11 +442,7 @@ fun QuickActionsGrid(navController: NavController) {
 }
 
 @Composable
-fun TodayMedicationCard(
-    medicineName: String?,
-    timeText: String = "",
-    contextText: String = ""
-) {
+fun TodayMedicationCard(reminders: List<Reminder>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -464,43 +460,39 @@ fun TodayMedicationCard(
         Spacer(modifier = Modifier.height(16.dp))
 
         // THE LOGIC: If there is a medicine, show the green card.
-        if (medicineName != null) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Row(modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
-
-                    // 1. The Green Line
-                    Box(
-                        modifier = Modifier
-                            .width(6.dp)
-                            .fillMaxHeight()
-                            .background(Color(0xFF00BFA5)) // HealthCare Green
-                    )
-
-                    // 2. The Text Content
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            text = "$timeText  •  $contextText",
-                            fontSize = 12.sp,
-                            color = Color.Gray
+        if (!reminders.isEmpty()) {
+            reminders.forEach { reminder ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+                        Box(
+                            modifier = Modifier
+                                .width(6.dp)
+                                .fillMaxHeight()
+                                .background(Color(0xFF00BFA5))
                         )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = medicineName,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A)
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp)
+                        ) {
+                            Text(
+                                text = "${reminder.time}  •  ${reminder.dosage} • ${reminder.instructions}",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = reminder.medicineName,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1A1A1A)
+                            )
+                        }
                     }
                 }
             }
