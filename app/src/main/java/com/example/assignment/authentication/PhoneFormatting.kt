@@ -6,7 +6,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 
 /**
  * Formats raw digit input into Malaysian mobile format and keeps the
- * cursor positioned correctly after the newly-typed digit (not at the end).
+ * cursor positioned correctly after the newly-typed digit.
  * Most prefixes: 01X-XXXXXXX (10 digits total, e.g. 012-3456789)
  * 011 prefix:    011-XXXXXXXX (11 digits total, e.g. 011-12345678)
  *
