@@ -234,7 +234,7 @@ fun AppNavigation() {
             route = "reminder_details/{documentId}",
             arguments = listOf(navArgument("documentId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val docId = backStackEntry.arguments?.getString("documentId") ?: 0
+            val docId = backStackEntry.arguments?.getInt("documentId") ?: 0
             ReminderDetailsScreen(navController, reminderViewModel, docId, username = activeUsername)
         }
 
