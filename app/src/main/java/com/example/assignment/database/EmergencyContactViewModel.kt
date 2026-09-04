@@ -51,8 +51,8 @@ class EmergencyContactViewModel(
             if (isExisting) {
                 emergencyContactDao.update(contact)
             } else {
-                val generatedId = emergencyContactDao.insert(contact)
-                _contact.value = contact.copy(id = generatedId)
+                emergencyContactDao.insert(contact)
+                _contact.value = contact
             }
 
             // Sync to Supabase
