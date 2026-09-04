@@ -1,5 +1,6 @@
 package com.example.assignment.navigation
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,15 +57,17 @@ import com.example.assignment.viewmodel.RecordViewModel
 import com.example.assignment.viewmodel.UserViewModel
 import com.example.assignment.database.AppointmentRepository
 import com.example.assignment.database.AppointmentViewModel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-
+    val coroutineScope = rememberCoroutineScope()
     // 1. Get the Context and open the Database
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
@@ -450,7 +453,12 @@ fun AppNavigation() {
             BookingConfirmedScreen(
                 appointmentId = appointmentId,
                 appointmentDao = appointmentDao,
-                onViewNotification = { navController.navigate("notifications") },
+                onViewDetails = {
+                    coroutineScope.launch {
+                        selectedAppointment = appointmentDao.getById(appointmentId)
+                        navController.navigate("appointment_detail")
+                    }
+                },
                 onBackToHome = {
                     navController.navigate("home") { popUpTo("home") { inclusive = true } }
                 }
