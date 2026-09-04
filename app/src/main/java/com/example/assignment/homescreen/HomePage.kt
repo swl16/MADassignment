@@ -78,6 +78,7 @@ fun HomeScreen(
         if (loggedInUsername.isNotEmpty()) {
             viewModel.loadUserProfile(loggedInUsername)
             appointmentViewModel.loadAppointments(loggedInUsername)
+            reminderViewModel.loadReminders(loggedInUsername)
         }
     }
 

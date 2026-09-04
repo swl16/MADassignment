@@ -31,7 +31,9 @@ import com.example.assignment.navigation.BottomNavBar
 fun ReminderScreen(navController: NavController, viewModel: ReminderViewModel, username: String) {
 
     LaunchedEffect(username) {
-        viewModel.loadReminders(username)
+        if (username.isNotBlank()) {
+            viewModel.loadReminders(username)
+        }
     }
 
     val reminders by viewModel.reminders.collectAsState()

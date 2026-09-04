@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -79,6 +81,8 @@ fun ReminderDetailsScreen(
         "3:00 PM","3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM","7:00 PM",
         "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM")
 
+    val scrollState = rememberScrollState()
+
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     // When the screen loads, find the reminder and populate the fields
@@ -101,6 +105,7 @@ fun ReminderDetailsScreen(
             .background(Color(0xFFF4F7FB))
             .padding(20.dp)
             .statusBarsPadding()
+            .verticalScroll(scrollState)
     ) {
         TopBar(title = "Reminder Details", onBackClick = { navController.popBackStack() })
 
@@ -175,7 +180,7 @@ fun ReminderDetailsScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // Save Changes Button
         Button(
