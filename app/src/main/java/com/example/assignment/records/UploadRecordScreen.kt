@@ -187,7 +187,7 @@ fun UploadRecordScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                     Spacer(Modifier.width(8.dp))
-                    Text("Uploading to Supabase...", fontSize = 15.sp, color = Color.White)
+                    Text("Uploading...", fontSize = 15.sp, color = Color.White)
                 }
             } else {
                 Text("Upload record", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
