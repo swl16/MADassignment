@@ -254,13 +254,17 @@ fun AppNavigation() {
         composable(
             route = "doctor_profile/{doctorIndex}",
             arguments = listOf(navArgument("doctorIndex") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val index = backStackEntry.arguments?.getInt("doctorIndex") ?: 0
+        ) { entry ->
+            val index = entry.arguments?.getInt("doctorIndex") ?: 0
+            val doctor = sampleDoctors.getOrElse(index) { sampleDoctors.first() }
+
             DoctorProfileScreen(
-                doctor = sampleDoctors[index],
+                doctor = doctor,
                 onNavigateBack = { navController.popBackStack() },
-                onBookAppointment = { navController.navigate("select_date_time/$index") },
-                onMessageClinic = { /* TODO if in scope */ }
+                onBookAppointment = {
+                    navController.navigate("select_date_time/$index")
+                }
+                , onMessageClinic = { /* TODO if in scope */ }
             )
         }
 

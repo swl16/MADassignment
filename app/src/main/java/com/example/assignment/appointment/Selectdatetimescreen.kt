@@ -1,5 +1,6 @@
 package com.example.assignment.appointment
 
+import android.R.attr.enabled
 import android.service.notification.Condition.newId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,12 +25,15 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,14 +51,13 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import com.example.assignment.database.AppointmentViewModel
+import kotlinx.coroutines.launch
 import java.time.LocalTime
 
 // NOTE: java.time requires core library desugaring for minSdk < 26.
 // In app-level build.gradle:
 //   android { compileOptions { isCoreLibraryDesugaringEnabled = true } }
 //   dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") }
-
-private val timeSlots = listOf("9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM")
 
 @Composable
 fun SelectDateTimeScreen(
@@ -66,19 +69,35 @@ fun SelectDateTimeScreen(
     initialTime: String? = null,
     isRescheduling: Boolean = false,
     appointmentIdToReschedule: Int?= null,
-    onNavigateBack: () -> Unit = {},
-    onConfirm: (date: LocalDate, time: String) -> Unit = { _, _ -> }
+    onNavigateBack: () -> Unit = {}
 ) {
     var weekStart by remember {
         mutableStateOf(initialDate.with(DayOfWeek.MONDAY))
     }
     var selectedDate by remember { mutableStateOf(initialDate) }
     var selectedTime by remember { mutableStateOf<String?>(initialTime) }
+    var bookingError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val formattedSelectedDate = selectedDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+    val bookedTimes by produceState<List<String>>(
+        initialValue = emptyList(),
+        key1 = doctor.name,
+        key2 = formattedSelectedDate
+    ) {
+        viewModel.getBookedSlots(doctor.name, formattedSelectedDate).collect { slots ->
+            value = if (isRescheduling && initialTime != null && selectedDate == initialDate) {
+                slots.filter { it != initialTime }
+            } else {
+                slots
+            }
+        }
+    }
 
     val weekDays = remember(weekStart) { (0..6).map { weekStart.plusDays(it.toLong()) } }
-
     val today = LocalDate.now()
     val currentWeekStart = today.with(DayOfWeek.MONDAY)
+    val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
+    val currentTime = LocalTime.now()
 
     Scaffold(containerColor = Color(0xFFF8FAFF)) { innerPadding ->
         Column(
@@ -90,13 +109,14 @@ fun SelectDateTimeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color(0xFF14213D),
-                    modifier = Modifier.clickable { onNavigateBack() }
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF14213D)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = if (isRescheduling) "Reschedule Appointment" else "Select Date & Time",
                     fontSize = 18.sp,
@@ -132,7 +152,7 @@ fun SelectDateTimeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Month header + week navigation
             Row(
@@ -148,25 +168,30 @@ fun SelectDateTimeScreen(
                 )
                 Row {
                     val canGoBack = weekStart.isAfter(currentWeekStart)
-                    Icon(
-                        imageVector = Icons.Default.ChevronLeft,
-                        contentDescription = "Previous week",
-                        tint = if (canGoBack) Color.Gray else Color(0xFFD3D3D3),
-                        modifier = if (canGoBack) Modifier.clickable { weekStart = weekStart.minusWeeks(1) } else Modifier
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Next week",
-                        tint = Color.Gray,
-                        modifier = Modifier.clickable { weekStart = weekStart.plusWeeks(1) }
-                    )
+                    IconButton(
+                        onClick = { weekStart = weekStart.minusWeeks(1) },
+                        enabled = canGoBack
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronLeft,
+                            contentDescription = "Previous week",
+                            tint = if (canGoBack) Color.Gray else Color(0xFFD3D3D3)
+                        )
+                    }
+                    //Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(onClick = { weekStart = weekStart.plusWeeks(1) }) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Next week",
+                            tint = Color.Gray
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Week row
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -175,7 +200,11 @@ fun SelectDateTimeScreen(
                     DayChip(
                         day = day,
                         selected = day == selectedDate,
-                        onClick = { selectedDate = day }
+                        onClick = {
+                            selectedDate = day
+                            selectedTime = null
+                            bookingError = null
+                        }
                     )
                 }
             }
@@ -185,11 +214,8 @@ fun SelectDateTimeScreen(
             Text(text = "Available time", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF14213D))
             Spacer(modifier = Modifier.height(10.dp))
 
-            val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
-            val currentTime = LocalTime.now()
-
             // 2x2 time slot grid
-            timeSlots.chunked(2).forEach { rowSlots ->
+            doctor.availableTimes.chunked(2).forEach { rowSlots ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -200,16 +226,33 @@ fun SelectDateTimeScreen(
                             LocalTime.parse(slot, timeFormatter).isBefore(currentTime)
                         }catch (e: Exception) { false }
 
+                        val isBooked = bookedTimes.contains(slot)
+                        val isSelectable = !isPastTime && !isBooked
+
                         TimeSlotButton(
-                            label = slot,
+                            label = if (isBooked) "$slot (Booked)" else slot,
                             selected = selectedTime == slot,
-                            enabled = !isPastTime,
+                            enabled = isSelectable,
                             modifier = Modifier.weight(1f),
-                            onClick = { selectedTime = slot }
+                            onClick = {
+                                selectedTime = slot
+                                bookingError = null
+                            }
                         )
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            bookingError?.let {
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -237,7 +280,7 @@ fun SelectDateTimeScreen(
                         color = Color(0xFF14213D)
                     )
                     Text(
-                        text = "$selectedTime  •  HealthCare Clinic",
+                        text = "$selectedTime  •  ${doctor.location}",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
@@ -249,10 +292,21 @@ fun SelectDateTimeScreen(
 
             Button(
                 onClick = {
-                    selectedTime?.let { time ->
-                        // Format the date to match the "Thursday, 16 July 2026" standard
-                        val formattedDate =
-                            selectedDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+                    val time = selectedTime ?: return@Button
+                    scope.launch {
+                        // Check if slot was booked while viewing the screen
+                        val isAvailable = viewModel.canBookSlot(
+                            doctorName = doctor.name,
+                            date = formattedSelectedDate,
+                            time = time,
+                            excludeId = appointmentIdToReschedule
+                        )
+
+                        if (!isAvailable) {
+                            bookingError = "This time slot is already taken. Please choose another."
+                            selectedTime = null
+                            return@launch
+                        }
 
                         if (isRescheduling && appointmentIdToReschedule != null) {
                             val updateAppt = Appointment(
@@ -260,23 +314,27 @@ fun SelectDateTimeScreen(
                                 username = username,
                                 doctorName = doctor.name,
                                 specialty = doctor.specialty,
-                                date = formattedDate,
+                                date = formattedSelectedDate,
                                 time = time,
+                                location = doctor.location,
                                 status = "Upcoming"
                             )
                             viewModel.updateAppointment(updateAppt)
-                            navController.navigate("booking_confirmed/$appointmentIdToReschedule")
+                            navController.popBackStack()
                         } else {
                             val newAppointment = Appointment(
                                 username = username,
                                 doctorName = doctor.name,
                                 specialty = doctor.specialty,
-                                date = formattedDate,
-                                time = time
+                                date = formattedSelectedDate,
+                                time = time,
+                                location = doctor.location,
+                                status = "Upcoming"
                             )
-
                             viewModel.saveAppointment(newAppointment) { newId ->
-                                navController.navigate("booking_confirmed/$newId")
+                                navController.navigate("booking_confirmed/$newId") {
+                                    popUpTo("appointments") { inclusive = false }
+                                }
                             }
                         }
                     }
