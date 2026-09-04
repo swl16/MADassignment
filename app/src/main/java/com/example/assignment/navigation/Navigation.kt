@@ -244,9 +244,8 @@ fun AppNavigation() {
                 onViewProfile = { doctorIndex ->
                     navController.navigate("doctor_profile/$doctorIndex")
                 },
-                onBookNow = { doctor ->
-                    val index = sampleDoctors.indexOf(doctor)
-                    navController.navigate("doctor_profile/$index")
+                onBookNow = { doctorIndex ->
+                    navController.navigate("select_date_time/$doctorIndex")
                 }
             )
         }
@@ -431,7 +430,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("doctorIndex") { type = NavType.IntType })
         ) { backStackEntry ->
             val index = backStackEntry.arguments?.getInt("doctorIndex") ?: 0
-            val doctor = sampleDoctors[index]
+            val doctor = sampleDoctors.getOrElse(index) { sampleDoctors.first() }
 
 
             SelectDateTimeScreen(

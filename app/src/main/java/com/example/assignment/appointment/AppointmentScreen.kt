@@ -59,7 +59,7 @@ private val mainCategories = listOf("General", "Dental", "Cardiology", "Pediatri
 @Composable
 fun AppointmentMain(
     navController: NavController,
-    onBookNow: (Doctor) -> Unit = {},
+    onBookNow: (Int) -> Unit = {},
     onViewProfile: (Int) -> Unit = {} // index into sampleDoctors, passed as navArgument
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -182,7 +182,7 @@ fun AppointmentMain(
                         DoctorCard(
                             doctor = doctor,
                             onViewProfile = { onViewProfile(realIndex) },
-                            onBookNow = { onBookNow(doctor) }
+                            onBookNow = { onBookNow(realIndex) }
                         )
                     }
                 }

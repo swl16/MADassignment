@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -141,7 +142,7 @@ fun DoctorProfileScreen(
             Text(text = "Available times", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF14213D))
             Spacer(modifier = Modifier.height(10.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 doctor.availableTimes.forEach { time ->
                     TimeSlotChip(
                         label = time,
@@ -203,7 +204,8 @@ private fun TimeSlotChip(label: String, selected: Boolean, onClick: () -> Unit) 
             .clip(RoundedCornerShape(14.dp))
             .background(if (selected) Color(0xFF1E50FF) else Color.White)
             .clickable { onClick() }
-            .padding(horizontal = 18.dp, vertical = 12.dp)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
