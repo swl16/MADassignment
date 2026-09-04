@@ -175,22 +175,22 @@ fun DoctorProfileScreen(
 
             OutlinedButton(
                 onClick = {
-                    val clinicNumber = "601135613680" // Clinic contact number
+                    val clinicNumber = "0123456789" // Clinic contact number
                     val inquiryMessage = "Hello, I would like to inquire about an appointment with ${doctor.name} at ${doctor.location}."
 
-                    val url = "https://api.whatsapp.com/send?phone=$clinicNumber&text=${java.net.URLEncoder.encode(inquiryMessage, "UTF-8")}"
-
-                    val whatsappIntent = Intent(Intent.ACTION_VIEW).apply {
-                        data = Uri.parse(url)
-                    }
-
-//                    val smsIntent = Intent(Intent.ACTION_VIEW).apply {
-//                        data = Uri.parse("sms:$clinicNumber")
-//                        putExtra("sms_body", inquiryMessage)
+//                    val url = "https://api.whatsapp.com/send?phone=$clinicNumber&text=${java.net.URLEncoder.encode(inquiryMessage, "UTF-8")}"
+//
+//                    val whatsappIntent = Intent(Intent.ACTION_VIEW).apply {
+//                        data = Uri.parse(url)
 //                    }
 
+                    val smsIntent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse("sms:$clinicNumber")
+                        putExtra("sms_body", inquiryMessage)
+                    }
+
                     try {
-                        context.startActivity(whatsappIntent)
+                        context.startActivity(smsIntent)
                     } catch (e: Exception) {
                         Toast.makeText(context, "No SMS application available on this device", Toast.LENGTH_SHORT).show()
                     }

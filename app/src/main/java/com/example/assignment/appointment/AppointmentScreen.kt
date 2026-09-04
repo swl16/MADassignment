@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.assignment.navigation.BottomNavBar
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 // Doctor data class + sampleDoctors now live in DoctorData.kt (shared with DoctorProfileScreen)
 
@@ -190,6 +192,7 @@ fun AppointmentMain(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val formattedSelectedDate = LocalDate.now().format(DateTimeFormatter.ofPattern("d MMMM yyyy"))
             // Date / Location bar
             Row(
                 modifier = Modifier
@@ -200,12 +203,17 @@ fun AppointmentMain(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Date: 15/7/2026", fontSize = 13.sp, color = Color(0xFF14213D))
+                Text(text = "Today Date: $formattedSelectedDate", fontSize = 13.sp, color = Color(0xFF14213D),maxLines = 1)
                 Text(
                     text = "Location: Nearby  ›",
                     fontSize = 13.sp,
                     color = Color(0xFF1E50FF),
-                    fontWeight = FontWeight.SemiBold
+                    maxLines = 1,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { navController.navigate("nearby") }
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
                 )
             }
 
