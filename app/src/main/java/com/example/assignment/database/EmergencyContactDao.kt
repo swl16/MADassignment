@@ -11,7 +11,7 @@ import androidx.room.Update
 interface EmergencyContactDao {
     // 1. Used when saving for the very first time (no existing row yet)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(contact: EmergencyContact): String
+    suspend fun insert(contact: EmergencyContact): Long
 
     // 2. Used when editing an existing contact
     @Update

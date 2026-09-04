@@ -1,6 +1,7 @@
 package com.example.assignment.database
 
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -45,6 +46,7 @@ data class Record(
     @SerialName("file_name")
     val fileName: String = ""
 ) {
+    @get:Ignore
     val category: RecordCategory
         get() = try {
             RecordCategory.entries.find { it.name == categoryName } ?: RecordCategory.LAB_RESULTS
