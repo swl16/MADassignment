@@ -371,7 +371,6 @@ fun AppNavigation() {
             arguments = listOf(navArgument("appointmentId") { type = NavType.IntType })
         ) { backStackEntry ->
             val appointmentId = backStackEntry.arguments?.getInt("appointmentId") ?: -1
-//            val scope = rememberCoroutineScope()
 
             val appointmentState by produceState<Appointment?>(initialValue = appointments.find { it.id == appointmentId }, key1 = appointmentId) {
                 if (value == null) {
@@ -419,27 +418,6 @@ fun AppNavigation() {
                     isRescheduling = true,
                     appointmentIdToReschedule = currentAppointment.id,
                     onNavigateBack = { navController.popBackStack() }
-
-//            ,onConfirm = { newDate, newTime ->
-//                        val formattedDate = newDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
-//
-//                        val index = appointments.indexOfFirst { it.id == appointment.id }
-//                        if (index != -1) {
-//                            appointments[index] = appointment.copy(
-//                                date = formattedDate,
-//                                time = newTime
-//                            )
-//                        }
-//
-//                        scope.launch {
-//                            val updatedAppointment = appointment.copy(
-//                                date = formattedDate,
-//                                time = newTime
-//                            )
-//                            appointmentDao.update(updatedAppointment)
-//                            navController.popBackStack()
-//                        }
-//                    }
                 )
             }
         }
@@ -450,29 +428,14 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val index = backStackEntry.arguments?.getInt("doctorIndex") ?: 0
             val doctor = sampleDoctors[index]
-//            val scope = rememberCoroutineScope()
+
 
             SelectDateTimeScreen(
                 navController = navController,
                 viewModel = appointmentViewModel,
                 username = activeUsername,
                 doctor = doctor,
-                onNavigateBack = { navController.popBackStack() },
-//                onConfirm = { date, time ->
-//                    scope.launch {
-//                        val newAppointment = Appointment(
-//                            username = activeUsername,
-//                            doctorName = doctor.name,
-//                            specialty = doctor.specialty,
-//                            date = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
-//                            time = time
-//                        )
-//                        val newId = appointmentDao.insert(newAppointment)
-//                        navController.navigate("booking_confirmed/${newId.toInt()}") {
-//                            popUpTo("appointments") { inclusive = false }
-//                        }
-//                    }
-//                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -511,13 +474,16 @@ fun BottomNavBar(navController: androidx.navigation.NavController, selectedIndex
                 selected = selectedIndex == index,
                 onClick = {
                     if (selectedIndex != index) {
-                        navController.navigate(item.first) {
-                            popUpTo("home") {
-                                saveState = true
-                                inclusive = false
+                        if(item.first == "home"){
+                            navController.popBackStack("home", inclusive = false)
+                        }else {
+                            navController.navigate(item.first) {
+                                popUpTo("home") {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 },

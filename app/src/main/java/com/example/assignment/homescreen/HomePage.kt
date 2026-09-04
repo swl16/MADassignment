@@ -413,7 +413,7 @@ fun QuickActionsGrid(navController: NavController) {
                 title = "Medication",
                 subtitle = "Set reminder",
                 modifier = Modifier.weight(1f),
-                onClick = {navController.navigate("addReminder")}// Takes 50% of the screen
+                onClick = {navController.navigate("reminders")}// Takes 50% of the screen
             )
         }
 
