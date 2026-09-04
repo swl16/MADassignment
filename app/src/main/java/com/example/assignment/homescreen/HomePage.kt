@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.assignment.database.Appointment
-import com.example.assignment.database.AppointmentDao
+import com.example.assignment.database.AppointmentViewModel
 import com.example.assignment.database.Reminder
 import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.navigation.BottomNavBar
@@ -53,13 +53,12 @@ fun HomeScreen(
     viewModel: UserViewModel,
     reminderViewModel: ReminderViewModel,
     loggedInUsername: String,
-    appointmentDao: AppointmentDao,
+    appointmentViewModel: AppointmentViewModel,
     onNavigateToProfile: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToAppointmentDetail: (Appointment) -> Unit
 ) {
-    val appointments by appointmentDao.getAppointmentsForUser(loggedInUsername)
-        .collectAsState(initial = emptyList())
+    val appointments by appointmentViewModel.appointments.collectAsState()
 
     val latestAppointment = appointments.firstOrNull()
     val reminders by reminderViewModel.reminders.collectAsState()

@@ -35,6 +35,12 @@ class ReminderViewModel(private val repository: ReminderRepository): ViewModel()
         }
     }
 
+    fun updateReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            repository.updateReminder(reminder)
+        }
+    }
+
     fun deleteReminder(id: Int) {
         viewModelScope.launch {
             try {
