@@ -358,17 +358,31 @@ fun AppNavigation() {
         }
 
         composable("appointment_detail") {
+            val appointmentId = selectedAppointment?.id ?: -1
+
+            // 1. Collect live updates directly from DAO so any reschedule immediately updates this screen!
+            val liveAppointment by produceState<Appointment?>(
+                initialValue = selectedAppointment,
+                key1 = appointmentId
+            ) {
+                // Re-fetch from DB whenever this composable is entered/resumed
+                value = appointmentDao.getById(appointmentId)
+            }
+
+            // Always use the latest record from DB
+            val currentAppointment = liveAppointment ?: selectedAppointment
 
             val doctor = sampleDoctors.find {
-                it.name.equals(selectedAppointment?.doctorName, ignoreCase = true)
+                it.name.equals(currentAppointment?.doctorName, ignoreCase = true)
             } ?: sampleDoctors.first()
 
             AppointmentDetailScreen(
                 navController = navController,
-                appointment = selectedAppointment,
+                appointment = currentAppointment,
                 doctor = doctor,
                 onCancelAppointment = { toCancel ->
                     appointmentViewModel.cancelAppointment(toCancel)
+                    navController.popBackStack()
                 }
             )
         }
@@ -378,11 +392,8 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val appointmentId = backStackEntry.arguments?.getInt("appointmentId") ?: -1
 
-            val appointmentState by produceState<Appointment?>(initialValue = appointments.find { it.id == appointmentId }, key1 = appointmentId) {
-                if (value == null) {
-                    // Fallback: Query directly from DB if in-memory list hasn't synced yet
-                    value = appointmentDao.getById(appointmentId) // or your DAO find method
-                }
+            val appointmentState by produceState<Appointment?>(initialValue = selectedAppointment?.takeIf { it.id == appointmentId }, key1 = appointmentId) {
+                value = appointmentDao.getById(appointmentId)
             }
 
             val currentAppointment = appointmentState
