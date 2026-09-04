@@ -20,7 +20,7 @@ class ReminderRepository(private val dao: ReminderDao) {
                 val remoteData = table.select { filter { eq("username", username) } }.decodeList<Reminder>()
                 dao.insertReminders(remoteData) // Updates local DB, which automatically updates Compose UI
             } catch (e: Exception) {
-                // Ignore network errors if offline, UI will just show local cache
+                e.printStackTrace()
             }
         }
     }
