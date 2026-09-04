@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -23,15 +24,21 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +65,7 @@ private val mainCategories = listOf("General", "Dental", "Cardiology", "Pediatri
 
 // ---------- Screen ----------
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentMain(
     navController: NavController,
@@ -87,24 +95,29 @@ fun AppointmentMain(
 
     Scaffold(
         containerColor = Color(0xFFF8FAFF),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Book Appointment",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F1F38)
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8FAFF))
+            )
+        },
         bottomBar = { BottomNavBar(navController = navController, selectedIndex = 1) }
+
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Book Appointment",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF14213D)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Search bar
             TextField(
@@ -228,7 +241,6 @@ private fun SpecialtyChip(label: String, selected: Boolean, onClick: () -> Unit)
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(if (selected) Color(0xFF1E50FF) else Color.White)
-//            .then(Modifier.padding(horizontal = 18.dp, vertical = 10.dp)),
             .border(
                 width = 1.dp,
                 color = if (selected) Color(0xFF1E50FF) else Color(0xFFE2E8F0),
@@ -247,7 +259,6 @@ private fun SpecialtyChip(label: String, selected: Boolean, onClick: () -> Unit)
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (selected) Color.White else Color(0xFF14213D),
-//            modifier = Modifier.clickableNoRipple(onClick)
         )
     }
 }
