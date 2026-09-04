@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
+import androidx.compose.material3.DatePickerDefaults.dateFormatter
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +22,18 @@ import androidx.compose.ui.unit.sp
 
 import com.example.assignment.database.Appointment
 import com.example.assignment.database.AppointmentViewModel
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.util.Locale
+
+private val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.ENGLISH)
+private val timeFormatter = DateTimeFormatterBuilder()
+    .parseCaseInsensitive()
+    .appendPattern("h:mm[ ]a")
+    .toFormatter(Locale.ENGLISH)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,8 +53,13 @@ fun AppointmentHistoryScreen(
         }
     }
 
-    val upcoming = appointments.filter { it.status == "Upcoming" }
-    val past = appointments.filter { it.status != "Upcoming" }
+    val now = LocalDateTime.now()
+    val upcomingAppointments = appointments.filter { appt ->
+        appt.status != "Canceled" && !isAppointmentInPast(appt.date, appt.time)
+    }
+    val pastAppointments = appointments.filter { appt ->
+        appt.status == "Canceled" || isAppointmentInPast(appt.date, appt.time)
+    }
 
     Scaffold(
         containerColor = Color(0xFFF5FAFF),
@@ -94,10 +112,10 @@ fun AppointmentHistoryScreen(
                 )
             }
 
-            if (upcoming.isEmpty()) {
+            if (upcomingAppointments.isEmpty()) {
                 item { Text("No upcoming appointments", color = Color.Gray, fontSize = 14.sp) }
             } else {
-                items(upcoming) { appointment ->
+                items(upcomingAppointments) { appointment ->
                     AppointmentHistoryCard(
                         appointment = appointment,
                         onClick = { onAppointmentClick(appointment) }
@@ -116,10 +134,10 @@ fun AppointmentHistoryScreen(
                 )
             }
 
-            if (past.isEmpty()) {
+            if (pastAppointments.isEmpty()) {
                 item { Text("No past appointments", color = Color.Gray, fontSize = 14.sp) }
             } else {
-                items(past) { appointment ->
+                items(pastAppointments) { appointment ->
                     AppointmentHistoryCard(
                         appointment = appointment,
                         onClick = { onAppointmentClick(appointment) }
@@ -215,12 +233,18 @@ fun AppointmentHistoryCard(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if (appointment.status == "Upcoming") "Confirmed" else "Completed",
+                    text = when {
+                        appointment.status == "Canceled" -> "Canceled"
+                        isAppointmentInPast(appointment.date, appointment.time) -> "Completed"
+                        else -> "Confirmed"
+                    },
+                    color = when {
+                        appointment.status == "Canceled" -> Color.Red
+                        isAppointmentInPast(appointment.date, appointment.time) -> Color(0xFF1F6BE8)
+                        else -> Color(0xFF21A673) // Green
+                    },
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (appointment.status == "Upcoming") Color(0xFF21A673) else Color(
-                        0xFF1F6BE8
-                    )
+                    fontWeight = FontWeight.Bold
                 )
             }
 
@@ -233,3 +257,19 @@ fun AppointmentHistoryCard(
     }
 }
 
+fun isAppointmentInPast(dateStr: String, timeStr: String): Boolean {
+    return try {
+        val cleanTime = timeStr.trim().replace("\u00A0", " ")
+        val localDate = try {
+            LocalDate.parse(dateStr, dateFormatter)
+        } catch (e: Exception) {
+            LocalDate.parse(dateStr) // Fallback for ISO date
+        }
+        val localTime = LocalTime.parse(cleanTime, timeFormatter)
+        val appointmentDateTime = LocalDateTime.of(localDate, localTime)
+
+        appointmentDateTime.isBefore(LocalDateTime.now())
+    } catch (e: Exception) {
+        false
+    }
+}

@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,9 +44,18 @@ import com.example.assignment.database.ReminderViewModel
 import com.example.assignment.navigation.BottomNavBar
 import com.example.assignment.viewmodel.UserViewModel
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Locale
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+
+private val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.ENGLISH)
+
+private val timeFormatterBuilder = DateTimeFormatterBuilder()
+    .parseCaseInsensitive()
+    .appendPattern("h:mm[ ]a")
+    .toFormatter(Locale.ENGLISH)
 
 @Composable
 fun HomeScreen(
@@ -58,16 +68,35 @@ fun HomeScreen(
     onNavigateToNotifications: () -> Unit,
     onNavigateToAppointmentDetail: (Appointment) -> Unit
 ) {
-    val appointments by appointmentViewModel.appointments.collectAsState()
 
-    val latestAppointment = appointments.firstOrNull()
+    val appointments by appointmentViewModel.appointments.collectAsState()
     val reminders by reminderViewModel.reminders.collectAsState()
     // 1. Observe the user state directly from the ViewModel
     val currentUser by viewModel.currentUser.collectAsState()
 
-    // 2. Fetch the data right when the screen opens
     LaunchedEffect(loggedInUsername) {
-        viewModel.loadUserProfile(loggedInUsername)
+        if (loggedInUsername.isNotEmpty()) {
+            viewModel.loadUserProfile(loggedInUsername)
+            appointmentViewModel.loadAppointments(loggedInUsername) // <-- Add your ViewModel fetch method here
+        }
+    }
+
+
+
+    val latestAppointment = remember(appointments) {
+        val now = LocalDateTime.now()
+        appointments
+            .filter { it.status.equals("Upcoming", ignoreCase = true) }
+            .mapNotNull { appt ->
+                val apptDateTime = parseAppointmentDateTime(appt.date, appt.time)
+                if (apptDateTime != null && apptDateTime.isAfter(now)) {
+                    appt to apptDateTime
+                } else {
+                    null
+                }
+            }
+            .minByOrNull { it.second }
+            ?.first
     }
 
     // 3. Derive UI values directly from the state (defaults to fallback text if loading)
@@ -252,6 +281,17 @@ fun GreetingLayer(
         )
 
         Spacer(modifier = Modifier.height(18.dp))
+    }
+}
+
+fun parseAppointmentDateTime(dateStr: String, timeStr: String): LocalDateTime? {
+    return try {
+        val cleanTime = timeStr.trim().replace("\u00A0", " ")
+        val localDate = LocalDate.parse(dateStr, dateFormatter)
+        val localTime = LocalTime.parse(cleanTime, timeFormatterBuilder)
+        LocalDateTime.of(localDate, localTime)
+    } catch (e: Exception) {
+        null
     }
 }
 
